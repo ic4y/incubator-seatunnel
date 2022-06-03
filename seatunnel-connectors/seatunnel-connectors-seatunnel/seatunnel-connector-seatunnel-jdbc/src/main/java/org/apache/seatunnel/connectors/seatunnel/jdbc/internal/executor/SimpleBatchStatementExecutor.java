@@ -61,6 +61,7 @@ class SimpleBatchStatementExecutor<T, V> implements JdbcBatchStatementExecutor<T
         batch.add(valueTransformer.apply(record));
     }
 
+    //TODO executeBatch 和 addToBatch 方法不能同时执行。在自动提交的场景下需要有锁
     @Override
     public void executeBatch() throws SQLException {
         if (!batch.isEmpty()) {

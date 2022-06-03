@@ -106,6 +106,29 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
+
+        <!--hadoop的java api的依赖坐标-->
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
+        <!--hadoop的对HDFS分布式文件系统访问的技术支持的依赖坐标-->
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
     </dependencies>
 
 </project>

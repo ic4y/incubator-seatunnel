@@ -19,7 +19,6 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.JdbcUtils;
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * @Author: Liuli
@@ -60,14 +59,11 @@ public class JdbcSink implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, Jdbc
     public SinkWriter<SeaTunnelRow, JdbcCommitInfo, JdbcSinkState> createWriter(SinkWriter.Context context)
             throws IOException
     {
-
-        try {
-            return  new JdbcSinkWriter(sql, (st, row) -> JdbcUtils.setRecordToStatement(st, null, row), connectionProvider, executionOptions);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-           throw new RuntimeException("createWriter err :" + e.getMessage());
-        }
+        return  new JdbcSinkWriter(
+                sql,
+                (st, row) -> JdbcUtils.setRecordToStatement(st, null, row),
+                connectionProvider,
+                executionOptions);
 
     }
 

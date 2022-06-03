@@ -29,7 +29,9 @@ import java.util.Objects;
 public class JdbcExecutionOptions
         implements Serializable {
     public static final int DEFAULT_MAX_RETRY_TIMES = 3;
-    private static final int DEFAULT_INTERVAL_MILLIS = 0;
+
+    //TODO 测试暂时改为2秒，这个默认是为0合适
+    private static final int DEFAULT_INTERVAL_MILLIS = 2000;
     public static final int DEFAULT_SIZE = 5000;
 
     private final long batchIntervalMs;
