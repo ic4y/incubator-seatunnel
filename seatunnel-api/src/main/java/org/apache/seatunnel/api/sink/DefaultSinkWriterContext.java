@@ -17,12 +17,14 @@
 
 package org.apache.seatunnel.api.sink;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * The default {@link SinkWriter.Context} implement class.
  */
-public class DefaultSinkWriterContext implements SinkWriter.Context {
+public class DefaultSinkWriterContext implements SinkWriter.Context , Serializable
+{
 
     private final Map<String, String> configuration;
     private final int subtask;

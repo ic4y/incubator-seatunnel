@@ -18,7 +18,10 @@
 package org.apache.seatunnel.connectors.seatunnel.console.sink;
 
 import org.apache.seatunnel.api.common.SeaTunnelContext;
+import org.apache.seatunnel.api.serialization.DefaultSerializer;
+import org.apache.seatunnel.api.serialization.Serializer;
 import org.apache.seatunnel.api.sink.SeaTunnelSink;
+import org.apache.seatunnel.api.sink.SinkCommitter;
 import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
@@ -28,7 +31,9 @@ import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import com.google.auto.service.AutoService;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @AutoService(SeaTunnelSink.class)
 public class ConsoleSink implements SeaTunnelSink<SeaTunnelRow, ConsoleState, ConsoleCommitInfo, ConsoleAggregatedCommitInfo> {
@@ -45,6 +50,19 @@ public class ConsoleSink implements SeaTunnelSink<SeaTunnelRow, ConsoleState, Co
     @Override
     public SinkWriter<SeaTunnelRow, ConsoleCommitInfo, ConsoleState> createWriter(SinkWriter.Context context) {
         return new ConsoleSinkWriter(seaTunnelRowTypeInfo);
+    }
+
+    @Override
+    public Optional<SinkCommitter<ConsoleCommitInfo>> createCommitter()
+            throws IOException
+    {
+        return Optional.of(new ConsoleCommitter());
+    }
+
+    @Override
+    public Optional<Serializer<ConsoleCommitInfo>> getCommitInfoSerializer()
+    {
+        return Optional.of(new DefaultSerializer<>());
     }
 
     @Override

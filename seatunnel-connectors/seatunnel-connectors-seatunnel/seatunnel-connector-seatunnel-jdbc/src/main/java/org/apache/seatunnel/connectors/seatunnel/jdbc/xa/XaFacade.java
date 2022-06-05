@@ -50,11 +50,8 @@ public interface XaFacade
     /** @return a non-serializable instance. */
     static XaFacade fromXaDataSourceSupplier(
             Supplier<XADataSource> dataSourceSupplier,
-            Integer timeoutSec,
-            boolean transactionPerConnection) {
-        return transactionPerConnection
-                ? new XaFacadePoolingImpl(() -> new XaFacadeImpl(dataSourceSupplier, timeoutSec))
-                : new XaFacadeImpl(dataSourceSupplier, timeoutSec);
+            Integer timeoutSec) {
+        return  new XaFacadeImpl(dataSourceSupplier, timeoutSec);
     }
 
     void open() throws Exception;

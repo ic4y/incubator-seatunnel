@@ -25,7 +25,9 @@ import org.apache.seatunnel.connectors.seatunnel.console.state.ConsoleState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 public class ConsoleSinkWriter implements SinkWriter<SeaTunnelRow, ConsoleCommitInfo, ConsoleState> {
@@ -45,8 +47,16 @@ public class ConsoleSinkWriter implements SinkWriter<SeaTunnelRow, ConsoleCommit
     }
 
     @Override
+    public List<ConsoleState> snapshotState()
+            throws IOException
+    {
+        return Arrays.asList(new ConsoleState());
+    }
+
+    @Override
     public Optional<ConsoleCommitInfo> prepareCommit() {
-        return Optional.empty();
+        System.out.println("----prepareCommit------");
+        return Optional.of(new ConsoleCommitInfo("send commit"));
     }
 
     @Override

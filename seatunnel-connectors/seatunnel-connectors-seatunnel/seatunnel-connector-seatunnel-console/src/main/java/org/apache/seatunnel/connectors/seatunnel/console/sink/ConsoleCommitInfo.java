@@ -17,5 +17,14 @@
 
 package org.apache.seatunnel.connectors.seatunnel.console.sink;
 
-public class ConsoleCommitInfo {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import java.io.Serializable;
+
+@Data
+@AllArgsConstructor
+public class ConsoleCommitInfo implements Serializable
+{
+    private final String commitInfo;
 }

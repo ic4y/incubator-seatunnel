@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -64,6 +65,7 @@ public class SparkDataSourceWriter<CommitInfoT, StateT, AggregatedCommitInfoT> i
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+        System.out.println("----sinkAggregatedCommitter != null--->");
         if (sinkAggregatedCommitter != null) {
             try {
                 sinkAggregatedCommitter.commit(combineCommitMessage(extractCommitInfo(messages)));

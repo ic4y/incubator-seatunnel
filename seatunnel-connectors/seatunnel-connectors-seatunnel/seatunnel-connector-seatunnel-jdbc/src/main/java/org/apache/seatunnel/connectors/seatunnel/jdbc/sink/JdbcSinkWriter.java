@@ -7,8 +7,8 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatc
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExecutionOptions;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcCommitInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.xa.XidImpl;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.function.Function;
  * @Author: Liuli
  * @Date: 2022/5/30 23:16
  */
-public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, JdbcCommitInfo, JdbcSinkState>
+public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSinkState>
 {
     @Override
     public List<JdbcSinkState> snapshotState()
@@ -59,7 +59,7 @@ public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, JdbcCommitInfo, 
     }
 
     @Override
-    public Optional<JdbcCommitInfo> prepareCommit()
+    public Optional<XidInfo> prepareCommit()
             throws IOException
     {
         System.out.println("------------------>prepareCommit");

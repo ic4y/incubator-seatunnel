@@ -83,7 +83,6 @@ public class FakeSourceReader implements SourceReader<SeaTunnelRow, FakeSourceSp
     @Override
     public List<FakeSourceSplit> snapshotState(long checkpointId) {
         FakeSourceSplit fakeSourceSplit = new FakeSourceSplit(String.valueOf(checkpointId));
-        System.out.println("------>Fake snapshotState");
         return Arrays.asList(fakeSourceSplit);
     }
 
