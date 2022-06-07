@@ -2,6 +2,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.xa;
 
 import org.apache.seatunnel.api.sink.SinkAggregatedCommitter;
 import org.apache.seatunnel.api.sink.SinkCommitter;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExactlyOnceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcAggregatedCommitInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
@@ -25,11 +26,12 @@ public class JdbcSinkAggregatedCommitter implements SinkAggregatedCommitter<XidI
 
     public JdbcSinkAggregatedCommitter(
             JdbcExactlyOnceOptions exactlyOnceOptions,
+            JdbcConnectionOptions jdbcConnectionOptions,
             SerializableSupplier<XADataSource> dataSourceSupplier
     )
     {
-        this.xaFacade = XaFacade.fromXaDataSourceSupplier(
-                dataSourceSupplier,
+        this.xaFacade = XaFacade.fromJdbcConnectionOptions(
+                jdbcConnectionOptions,
                 exactlyOnceOptions.getTimeoutSec());
         this.xaGroupOps = new XaGroupOpsImpl(xaFacade);
     }

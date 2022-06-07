@@ -13,6 +13,7 @@ import org.apache.seatunnel.api.sink.SinkCommitter;
 import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.DataSourceType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
@@ -49,6 +50,7 @@ public class JdbcSink implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidI
     private Config pluginConfig;
     private SeaTunnelRowTypeInfo seaTunnelRowTypeInfo;
     private SeaTunnelContext seaTunnelContext;
+    private JdbcConnectionOptions jdbcConnectionOptions;
 
     private   MySqlXaDataSourceFactory mySqlXaDataSourceFactory =      new MySqlXaDataSourceFactory("jdbc:mysql://localhost/test","root","123456");
 
@@ -66,7 +68,11 @@ public class JdbcSink implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidI
         jdbcConnectionOptionsBuilder.withUrl("jdbc:mysql://localhost/test");
         jdbcConnectionOptionsBuilder.withUsername("root");
         jdbcConnectionOptionsBuilder.withPassword("123456");
-        this.connectionProvider = new SimpleJdbcConnectionProvider(jdbcConnectionOptionsBuilder.build());
+        jdbcConnectionOptionsBuilder.withDataSourceType(DataSourceType.XA_DATA_SOURCE);
+        jdbcConnectionOptionsBuilder.withDataSourceName("com.mysql.cj.jdbc.MysqlXADataSource");
+
+        this.jdbcConnectionOptions = jdbcConnectionOptionsBuilder.build();
+        this.connectionProvider = new SimpleJdbcConnectionProvider(this.jdbcConnectionOptions);
         this.executionOptions = JdbcExecutionOptions.builder().withMaxRetries(0).build();
         this.sql = "insert into test_table(name,age) values(?,?)";
     }
@@ -85,6 +91,7 @@ public class JdbcSink implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidI
                 context,
                 sql,
                 (st, row) -> JdbcUtils.setRecordToStatement(st, null, row),
+                jdbcConnectionOptions,
                 executionOptions,
                 JdbcExactlyOnceOptions.builder().build(),
                 mySqlXaDataSourceFactory
@@ -108,19 +115,18 @@ public class JdbcSink implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidI
     {
         JdbcExactlyOnceOptions.JDBCExactlyOnceOptionsBuilder builder = JdbcExactlyOnceOptions.builder();
         JdbcExactlyOnceOptions build = builder.build();
-        System.out.println("---->SinkCommitter");
-        return Optional.of(new JdbcSinkCommitter(build, mySqlXaDataSourceFactory));
+        return Optional.of(new JdbcSinkCommitter(build, jdbcConnectionOptions));
     }
 
-    @Override
-    public Optional<SinkAggregatedCommitter<XidInfo, JdbcAggregatedCommitInfo>> createAggregatedCommitter()
-            throws IOException
-    {
-        JdbcExactlyOnceOptions.JDBCExactlyOnceOptionsBuilder builder = JdbcExactlyOnceOptions.builder();
-        JdbcExactlyOnceOptions build = builder.build();
-        System.out.println("---->SinkAggregatedCommitter");
-        return Optional.of(new JdbcSinkAggregatedCommitter(build, mySqlXaDataSourceFactory));
-    }
+//    @Override
+//    public Optional<SinkAggregatedCommitter<XidInfo, JdbcAggregatedCommitInfo>> createAggregatedCommitter()
+//            throws IOException
+//    {
+//        JdbcExactlyOnceOptions.JDBCExactlyOnceOptionsBuilder builder = JdbcExactlyOnceOptions.builder();
+//        JdbcExactlyOnceOptions build = builder.build();
+//        System.out.println("---->SinkAggregatedCommitter");
+//        return Optional.of(new JdbcSinkAggregatedCommitter(build, mySqlXaDataSourceFactory));
+//    }
 
     @Override
     public Optional<Serializer<JdbcAggregatedCommitInfo>> getAggregatedCommitInfoSerializer()

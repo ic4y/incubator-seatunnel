@@ -17,17 +17,20 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options;
 
-
 import com.google.common.base.Preconditions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.DataSourceType;
 
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.Optional;
 
-/** JDBC connection options. */
+/**
+ * JDBC connection options.
+ */
 public class JdbcConnectionOptions
-        implements Serializable {
+        implements Serializable
+{
 
     private static final long serialVersionUID = 1L;
 
@@ -37,65 +40,111 @@ public class JdbcConnectionOptions
     @Nullable protected final String username;
     @Nullable protected final String password;
 
+    protected final String dataSourceName;
+    protected final DataSourceType dataSourceType;
+
     protected JdbcConnectionOptions(
             String url,
             @Nullable String driverName,
+            @Nullable String dataSourceName,
+            @Nullable DataSourceType dataSourceType,
             @Nullable String username,
             @Nullable String password,
-            int connectionCheckTimeoutSeconds) {
+            int connectionCheckTimeoutSeconds)
+    {
         Preconditions.checkArgument(connectionCheckTimeoutSeconds > 0);
         this.url = Preconditions.checkNotNull(url, "jdbc url is empty");
         this.driverName = driverName;
+        this.dataSourceName = dataSourceName;
+        this.dataSourceType = dataSourceType;
         this.username = username;
         this.password = password;
+
         this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
     }
 
-    public String getDbURL() {
+    public String getDbURL()
+    {
         return url;
     }
 
     @Nullable
-    public String getDriverName() {
+    public String getDriverName()
+    {
         return driverName;
     }
 
-    public Optional<String> getUsername() {
+    public Optional<String> getUsername()
+    {
         return Optional.ofNullable(username);
     }
 
-    public Optional<String> getPassword() {
+    public Optional<String> getPassword()
+    {
         return Optional.ofNullable(password);
     }
 
-    public int getConnectionCheckTimeoutSeconds() {
+    public int getConnectionCheckTimeoutSeconds()
+    {
         return connectionCheckTimeoutSeconds;
     }
 
-    /** Builder for {@link JdbcConnectionOptions}. */
-    public static class JdbcConnectionOptionsBuilder {
+    //TODO 这个参数后面必须配置
+    public String getDataSourceName()
+    {
+        return dataSourceName;
+    }
+
+    public DataSourceType getDataSourceType()
+    {
+        return dataSourceType;
+    }
+
+    /**
+     * Builder for {@link JdbcConnectionOptions}.
+     */
+    public static class JdbcConnectionOptionsBuilder
+    {
         private String url;
         private String driverName;
         private String username;
         private String password;
         private int connectionCheckTimeoutSeconds = 60;
+        private String dataSourceName;
+        private DataSourceType dataSourceType;
 
-        public JdbcConnectionOptionsBuilder withUrl(String url) {
+        public JdbcConnectionOptionsBuilder withDataSourceName(String dataSourceName)
+        {
+            this.dataSourceName = dataSourceName;
+            return this;
+        }
+
+        public JdbcConnectionOptionsBuilder withDataSourceType(DataSourceType dataSourceType)
+        {
+            this.dataSourceType = dataSourceType;
+            return this;
+        }
+
+        public JdbcConnectionOptionsBuilder withUrl(String url)
+        {
             this.url = url;
             return this;
         }
 
-        public JdbcConnectionOptionsBuilder withDriverName(String driverName) {
+        public JdbcConnectionOptionsBuilder withDriverName(String driverName)
+        {
             this.driverName = driverName;
             return this;
         }
 
-        public JdbcConnectionOptionsBuilder withUsername(String username) {
+        public JdbcConnectionOptionsBuilder withUsername(String username)
+        {
             this.username = username;
             return this;
         }
 
-        public JdbcConnectionOptionsBuilder withPassword(String password) {
+        public JdbcConnectionOptionsBuilder withPassword(String password)
+        {
             this.password = password;
             return this;
         }
@@ -104,17 +153,19 @@ public class JdbcConnectionOptions
          * Set the maximum timeout between retries, default is 60 seconds.
          *
          * @param connectionCheckTimeoutSeconds the timeout seconds, shouldn't smaller than 1
-         *     second.
+         * second.
          */
         public JdbcConnectionOptionsBuilder withConnectionCheckTimeoutSeconds(
-                int connectionCheckTimeoutSeconds) {
+                int connectionCheckTimeoutSeconds)
+        {
             this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
             return this;
         }
 
-        public JdbcConnectionOptions build() {
+        public JdbcConnectionOptions build()
+        {
             return new JdbcConnectionOptions(
-                    url, driverName, username, password, connectionCheckTimeoutSeconds);
+                    url, driverName, dataSourceName, dataSourceType, username, password, connectionCheckTimeoutSeconds);
         }
     }
 }

@@ -23,8 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import javax.sql.CommonDataSource;
+import javax.sql.DataSource;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -107,7 +110,18 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
         if (connection != null) {
             return connection;
         }
-        if (jdbcOptions.getDriverName() == null) {
+//        if (jdbcOptions.getDataSourceName() != null && jdbcOptions.getDataSourceType() == DataSourceType.DATA_SOURCE){
+//            DataSource commonDataSource = null;
+//            try {
+//                commonDataSource = (DataSource) DataSourceUtils.buildCommonDataSource(jdbcOptions);
+//            }
+//            catch (Exception e) {
+//                throw new SQLException(e);
+//            }
+//
+//            connection =  commonDataSource.getConnection();
+//        }else
+         if (jdbcOptions.getDriverName() == null) {
             connection =
                     DriverManager.getConnection(
                             jdbcOptions.getDbURL(),

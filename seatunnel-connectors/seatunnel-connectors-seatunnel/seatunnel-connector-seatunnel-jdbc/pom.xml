@@ -37,6 +37,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.5</version>
+        </dependency>
+
         <!-- jsr305 用于代码检查 -->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>

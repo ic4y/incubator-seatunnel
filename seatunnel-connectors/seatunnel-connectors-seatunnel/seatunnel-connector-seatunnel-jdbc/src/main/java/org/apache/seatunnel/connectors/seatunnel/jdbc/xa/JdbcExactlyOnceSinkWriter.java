@@ -6,6 +6,7 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcOutputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExactlyOnceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExecutionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
@@ -19,6 +20,7 @@ import javax.sql.XADataSource;
 import javax.transaction.xa.Xid;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +49,7 @@ public class JdbcExactlyOnceSinkWriter
             SinkWriter.Context context,
             String sql,
             JdbcStatementBuilder<SeaTunnelRow> statementBuilder,
+            JdbcConnectionOptions jdbcConnectionOptions,
             JdbcExecutionOptions executionOptions,
             JdbcExactlyOnceOptions exactlyOnceOptions,
             SerializableSupplier<XADataSource> dataSourceSupplier)
@@ -59,8 +62,8 @@ public class JdbcExactlyOnceSinkWriter
 
         this.context = context;
         this.xidGenerator = XidGenerator.semanticXidGenerator();
-        this.xaFacade =  XaFacade.fromXaDataSourceSupplier(
-                dataSourceSupplier,
+        this.xaFacade =  XaFacade.fromJdbcConnectionOptions(
+                jdbcConnectionOptions,
                 exactlyOnceOptions.getTimeoutSec());
 
 
@@ -98,6 +101,7 @@ public class JdbcExactlyOnceSinkWriter
     public  void write(SeaTunnelRow element)
             throws IOException
     {
+        System.out.println(Arrays.toString(element.getFields()));
         Preconditions.checkState(currentXid != null, "current xid must not be null");
         outputFormat.writeRecord(element);
     }
@@ -143,11 +147,9 @@ public class JdbcExactlyOnceSinkWriter
         // don't format.close(); as we don't want neither to flush nor to close connection here
         currentXid = null;
 
-        System.out.println("=======close===");
     }
 
     private void beginTx() throws IOException {
-        System.out.println("--___---------.>beginTx");
         Preconditions.checkState(currentXid == null, "currentXid not null");
         currentXid = xidGenerator.generateXid(context, System.currentTimeMillis());
         try {

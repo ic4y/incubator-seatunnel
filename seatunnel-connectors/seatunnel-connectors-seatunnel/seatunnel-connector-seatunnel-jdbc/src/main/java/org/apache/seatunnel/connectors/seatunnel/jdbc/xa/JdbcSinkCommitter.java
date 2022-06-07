@@ -1,6 +1,7 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.xa;
 
 import org.apache.seatunnel.api.sink.SinkCommitter;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExactlyOnceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.SerializableSupplier;
@@ -25,14 +26,21 @@ public class JdbcSinkCommitter
 
     public JdbcSinkCommitter(
             JdbcExactlyOnceOptions exactlyOnceOptions,
-            SerializableSupplier<XADataSource> dataSourceSupplier
+            JdbcConnectionOptions jdbcConnectionOptions
     )
+            throws IOException
     {
-        this.xaFacade = XaFacade.fromXaDataSourceSupplier(
-                dataSourceSupplier,
+        this.xaFacade = XaFacade.fromJdbcConnectionOptions(
+                jdbcConnectionOptions,
                 exactlyOnceOptions.getTimeoutSec());
         this.xaGroupOps = new XaGroupOpsImpl(xaFacade);
-        System.out.println("------JdbcSinkCommitter---"+xaFacade.toString());
+        try {
+            xaFacade.open();
+        }
+        catch (Exception e) {
+            throw new IOException(e);
+        }
+        System.out.println("create JdbcSinkCommitter..");
     }
 
     @Override
