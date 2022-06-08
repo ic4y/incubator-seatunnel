@@ -34,11 +34,17 @@ public class JdbcSinkAggregatedCommitter implements SinkAggregatedCommitter<XidI
 
     public JdbcSinkAggregatedCommitter(
         JdbcConnectorOptions jdbcConnectorOptions
-    ) {
+    ) throws IOException {
         this.xaFacade = XaFacade.fromJdbcConnectionOptions(
             jdbcConnectorOptions);
         this.xaGroupOps = new XaGroupOpsImpl(xaFacade);
         this.jdbcConnectorOptions = jdbcConnectorOptions;
+        try {
+            xaFacade.open();
+        }
+        catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     @Override
@@ -46,7 +52,7 @@ public class JdbcSinkAggregatedCommitter implements SinkAggregatedCommitter<XidI
         List<JdbcAggregatedCommitInfo> collect = aggregatedCommitInfos.stream().map(aggregatedCommitInfo -> {
             XaGroupOps.GroupXaOperationResult<XidInfo> result = xaGroupOps.commit(aggregatedCommitInfo.getXidInfoList(), false, jdbcConnectorOptions.getMaxCommitAttempts());
             return new JdbcAggregatedCommitInfo(result.getForRetry());
-        }).collect(Collectors.toList());
+        }).filter(ainfo -> !ainfo.getXidInfoList().isEmpty()).collect(Collectors.toList());
         return collect;
     }
 
