@@ -25,11 +25,13 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcOutputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.SimpleBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.ExceptionUtils;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 public class JdbcExactlyOnceSinkWriter
     implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSinkState> {
@@ -52,6 +53,8 @@ public class JdbcExactlyOnceSinkWriter
     private final XidGenerator xidGenerator;
 
     private final JdbcOutputFormat<SeaTunnelRow, JdbcBatchStatementExecutor<SeaTunnelRow>> outputFormat;
+
+    private transient boolean isOpen;
 
     private transient Xid currentXid;
 
@@ -73,21 +76,21 @@ public class JdbcExactlyOnceSinkWriter
         this.outputFormat = new JdbcOutputFormat<>(
             xaFacade,
             jdbcConnectorOptions,
-            () -> JdbcBatchStatementExecutor.simple(
-                jdbcConnectorOptions.getQuery(), statementBuilder, Function.identity()));
-
-        open();
+            () -> new SimpleBatchStatementExecutor<>(jdbcConnectorOptions.getQuery(), statementBuilder));
     }
 
-    public void open() throws IOException {
-        try {
-            xidGenerator.open();
-            xaFacade.open();
-            outputFormat.open();
-            beginTx();
-        }
-        catch (Exception e) {
-            throw new IOException(e);
+    private void tryOpen() throws IOException {
+        if (!isOpen) {
+            isOpen = true;
+            try {
+                xidGenerator.open();
+                xaFacade.open();
+                outputFormat.open();
+                beginTx();
+            }
+            catch (Exception e) {
+                throw new IOException(e);
+            }
         }
     }
 
@@ -99,8 +102,10 @@ public class JdbcExactlyOnceSinkWriter
     @Override
     public void write(SeaTunnelRow element)
         throws IOException {
+        tryOpen();
         checkState(currentXid != null, "current xid must not be null");
-        outputFormat.writeRecord(element);
+        SeaTunnelRow copy = SerializationUtils.clone(element);
+        outputFormat.writeRecord(copy);
     }
 
     @Override

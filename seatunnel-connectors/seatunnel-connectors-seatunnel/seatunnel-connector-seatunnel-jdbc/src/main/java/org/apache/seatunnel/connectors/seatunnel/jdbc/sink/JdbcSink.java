@@ -23,7 +23,6 @@ import org.apache.seatunnel.api.serialization.DefaultSerializer;
 import org.apache.seatunnel.api.serialization.Serializer;
 import org.apache.seatunnel.api.sink.SeaTunnelSink;
 import org.apache.seatunnel.api.sink.SinkAggregatedCommitter;
-import org.apache.seatunnel.api.sink.SinkCommitter;
 import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
@@ -35,7 +34,6 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.JdbcUtils;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.xa.JdbcExactlyOnceSinkWriter;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.xa.JdbcSinkAggregatedCommitter;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.xa.JdbcSinkCommitter;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
@@ -96,15 +94,6 @@ public class JdbcSink implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidI
         }
         return Optional.empty();
     }
-
-//    @Override
-//    public Optional<SinkCommitter<XidInfo>> createCommitter()
-//        throws IOException {
-//        if (jdbcConnectorOptions.isExactlyOnce()) {
-//            return Optional.of(new JdbcSinkCommitter(jdbcConnectorOptions));
-//        }
-//        return Optional.empty();
-//    }
 
     @Override
     public void setTypeInfo(SeaTunnelRowTypeInfo seaTunnelRowTypeInfo) {

@@ -24,20 +24,23 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcCo
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.SimpleBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
+
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSinkState> {
 
     private final JdbcOutputFormat<SeaTunnelRow, JdbcBatchStatementExecutor<SeaTunnelRow>> outputFormat;
     private final SinkWriter.Context context;
+    private transient boolean isOpen;
 
     public JdbcSinkWriter(
         SinkWriter.Context context,
@@ -51,8 +54,14 @@ public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSin
         this.outputFormat = new JdbcOutputFormat<>(
             connectionProvider,
             jdbcConnectorOptions,
-            () -> JdbcBatchStatementExecutor.simple(jdbcConnectorOptions.getQuery(), statementBuilder, Function.identity()));
-        outputFormat.open();
+            () -> new SimpleBatchStatementExecutor<>(jdbcConnectorOptions.getQuery(), statementBuilder));
+    }
+
+    private void tryOpen() throws IOException {
+        if (!isOpen) {
+            isOpen = true;
+            outputFormat.open();
+        }
     }
 
     @Override
@@ -63,7 +72,11 @@ public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSin
     @Override
     public void write(SeaTunnelRow element)
         throws IOException {
-        outputFormat.writeRecord(element);
+        tryOpen();
+        //TODO org.apache.spark.unsafe.types.UTF8String
+        System.out.println(element.getFields()[0].getClass().getName());
+        SeaTunnelRow copy = SerializationUtils.clone(element);
+        outputFormat.writeRecord(copy);
     }
 
     @Override

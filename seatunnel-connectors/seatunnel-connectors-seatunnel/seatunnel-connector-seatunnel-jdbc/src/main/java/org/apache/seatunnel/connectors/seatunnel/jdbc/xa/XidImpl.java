@@ -109,7 +109,7 @@ final class XidImpl implements Xid, Serializable {
      */
     public static String byteToHexString(final byte[] bytes, final int start, final int end) {
         final int number0xf0 = 0xF0;
-        final int number0x0f = 0xF0;
+        final int number0x0f = 0x0F;
         final int number4 = 4;
         if (bytes == null) {
             throw new IllegalArgumentException("bytes == null");

@@ -19,7 +19,6 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Function;
 
 /** Executes the given JDBC statement in batch for the accumulated records. */
 public interface JdbcBatchStatementExecutor<T> {
@@ -34,9 +33,4 @@ public interface JdbcBatchStatementExecutor<T> {
 
     /** Close JDBC related statements. */
     void closeStatements() throws SQLException;
-
-    static <T, V> JdbcBatchStatementExecutor<T> simple(
-            String sql, JdbcStatementBuilder<V> paramSetter, Function<T, V> valueTransformer) {
-        return new SimpleBatchStatementExecutor<>(sql, paramSetter, valueTransformer);
-    }
 }
