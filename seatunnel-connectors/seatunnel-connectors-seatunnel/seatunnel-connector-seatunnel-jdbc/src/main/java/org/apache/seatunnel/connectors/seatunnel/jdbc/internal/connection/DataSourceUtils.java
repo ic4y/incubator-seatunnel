@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 import com.google.common.base.Preconditions;
 import com.sun.tools.javac.comp.Check;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
@@ -28,24 +29,21 @@ public class DataSourceUtils
 
     private static final String SETTER_PREFIX = "set";
 
-    public static CommonDataSource buildCommonDataSource(JdbcConnectionOptions jdbcConnectionOptions)
+    public static CommonDataSource buildCommonDataSource(JdbcConnectorOptions jdbcConnectorOptions)
             throws InvocationTargetException, IllegalAccessException
     {
-        CommonDataSource dataSource = (CommonDataSource) loadDataSource(jdbcConnectionOptions.getDataSourceName());
-        setProperties(dataSource, buildDatabaseAccessConfig(jdbcConnectionOptions));
+        CommonDataSource dataSource = (CommonDataSource) loadDataSource(jdbcConnectorOptions.getXaDataSourceClassName());
+        setProperties(dataSource, buildDatabaseAccessConfig(jdbcConnectorOptions));
         return dataSource;
     }
 
-    private static Map<String, Object> buildDatabaseAccessConfig(JdbcConnectionOptions jdbcConnectionOptions)
+    private static Map<String, Object> buildDatabaseAccessConfig(JdbcConnectorOptions jdbcConnectorOptions)
     {
         HashMap<String, Object> accessConfig = new HashMap<>();
-        accessConfig.put("url", jdbcConnectionOptions.getDbURL());
-        if (jdbcConnectionOptions.getUsername().isPresent()) {
-            accessConfig.put("user", jdbcConnectionOptions.getUsername().get());
-        }
-        if (jdbcConnectionOptions.getPassword().isPresent()) {
-            accessConfig.put("password", jdbcConnectionOptions.getPassword().get());
-        }
+        accessConfig.put("url", jdbcConnectorOptions.getUrl());
+        accessConfig.put("user", jdbcConnectorOptions.getUsername());
+        accessConfig.put("password", jdbcConnectorOptions.getPassword());
+
         return accessConfig;
     }
 

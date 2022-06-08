@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExecutionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcOutputFormat.class);
 
-    private final JdbcExecutionOptions executionOptions;
+    private final JdbcConnectorOptions jdbcConnectorOptions;
     private final StatementExecutorFactory<JdbcExec> statementExecutorFactory;
 
     private transient JdbcExec jdbcStatementExecutor;
@@ -80,11 +81,11 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
 
     public JdbcOutputFormat(
             @Nonnull JdbcConnectionProvider connectionProvider,
-            @Nonnull JdbcExecutionOptions executionOptions,
+            @Nonnull JdbcConnectorOptions jdbcConnectorOptions,
             @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory)
     {
         this.connectionProvider = checkNotNull(connectionProvider);
-        this.executionOptions = checkNotNull(executionOptions);
+        this.jdbcConnectorOptions = checkNotNull(jdbcConnectorOptions);
         this.statementExecutorFactory = checkNotNull(statementExecutorFactory);
     }
 
@@ -108,7 +109,7 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
         //若配置了刷新事件或数量刷新 需要定时线程去执行flush
         //TODO 实时任务需要校验，在exactlyOnce下IntervalMs、BatchSize 不能配置或者不生效
         //TODO 离线任务必须配置IntervalMs、BatchSize中任意一项，或者填充默认值
-        if (executionOptions.getBatchIntervalMs() != 0 && executionOptions.getBatchSize() != 1) {
+        if (jdbcConnectorOptions.getBatchIntervalMs() != 0 && jdbcConnectorOptions.getBatchSize() != 1) {
             this.scheduler =
                     Executors.newScheduledThreadPool(
                             1, runnable -> {
@@ -132,8 +133,8 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
                                     }
                                 }
                             },
-                            executionOptions.getBatchIntervalMs(),
-                            executionOptions.getBatchIntervalMs(),
+                            jdbcConnectorOptions.getBatchIntervalMs(),
+                            jdbcConnectorOptions.getBatchIntervalMs(),
                             TimeUnit.MILLISECONDS);
         }
     }
@@ -167,8 +168,8 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
         try {
             addToBatch(record);
             batchCount++;
-            if (executionOptions.getBatchSize() > 0
-                    && batchCount >= executionOptions.getBatchSize()) {
+            if (jdbcConnectorOptions.getBatchSize() > 0
+                    && batchCount >= jdbcConnectorOptions.getBatchSize()) {
                 flush();
             }
         }
@@ -188,7 +189,7 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
     {
         checkFlushException();
 
-        for (int i = 0; i <= executionOptions.getMaxRetries(); i++) {
+        for (int i = 0; i <= jdbcConnectorOptions.getMaxRetries(); i++) {
             try {
                 attemptFlush();
                 batchCount = 0;
@@ -196,7 +197,7 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
             }
             catch (SQLException e) {
                 LOG.error("JDBC executeBatch error, retry times = {}", i, e);
-                if (i >= executionOptions.getMaxRetries()) {
+                if (i >= jdbcConnectorOptions.getMaxRetries()) {
                     throw new IOException(e);
                 }
                 try {
@@ -272,14 +273,6 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
                 reconnect
                         ? connectionProvider.reestablishConnection()
                         : connectionProvider.getConnection());
-    }
-
-    /**
-     * Returns configured {@code JdbcExecutionOptions}.
-     */
-    public JdbcExecutionOptions getExecutionOptions()
-    {
-        return executionOptions;
     }
 
     @VisibleForTesting

@@ -19,6 +19,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.xa;
 
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 
 import javax.sql.XADataSource;
 import javax.transaction.xa.XAException;
@@ -56,9 +57,8 @@ public interface XaFacade
     }
 
     static XaFacade fromJdbcConnectionOptions(
-            JdbcConnectionOptions jdbcConnectionOptions,
-            Integer timeoutSec) {
-        return  new XaFacadeImplAutoLoad(jdbcConnectionOptions, timeoutSec);
+            JdbcConnectorOptions jdbcConnectorOptions) {
+        return  new XaFacadeImplAutoLoad(jdbcConnectorOptions);
     }
 
     void open() throws Exception;

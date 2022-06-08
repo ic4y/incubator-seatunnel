@@ -23,6 +23,7 @@ import lombok.SneakyThrows;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.DataSourceType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.DataSourceUtils;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.SerializableSupplier;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.ThrowingRunnable;
 import org.slf4j.Logger;
@@ -78,17 +79,15 @@ class XaFacadeImplAutoLoad
             new HashSet<>(Arrays.asList(XA_HEURRB, XA_HEURCOM, XA_HEURHAZ, XA_HEURMIX));
     private static final int MAX_RECOVER_CALLS = 100;
 
-    private final Integer timeoutSec;
-    private final JdbcConnectionOptions jdbcConnectionOptions;
+    private final JdbcConnectorOptions jdbcConnectorOptions;
     private transient XAResource xaResource;
     private transient Connection connection;
     private transient XAConnection xaConnection;
 
 
-    XaFacadeImplAutoLoad(JdbcConnectionOptions jdbcConnectionOptions, Integer timeoutSec) {
-        Preconditions.checkState(jdbcConnectionOptions.getDataSourceType() == DataSourceType.XA_DATA_SOURCE, "already connected config error");
-        this.jdbcConnectionOptions = jdbcConnectionOptions;
-        this.timeoutSec = timeoutSec;
+    XaFacadeImplAutoLoad(JdbcConnectorOptions jdbcConnectorOptions) {
+        Preconditions.checkState(jdbcConnectorOptions.isIs_exactly_once() , "is_exactly_once config error");
+        this.jdbcConnectorOptions = jdbcConnectorOptions;
     }
 
     @Override
@@ -96,16 +95,17 @@ class XaFacadeImplAutoLoad
         Preconditions.checkState(!isOpen(), "already connected");
         XADataSource ds = null;
         try {
-            ds = (XADataSource) DataSourceUtils.buildCommonDataSource(jdbcConnectionOptions);
+            ds = (XADataSource) DataSourceUtils.buildCommonDataSource(jdbcConnectorOptions);
         }
         catch (Exception e) {
             throw new SQLException(e);
         }
         xaConnection = ds.getXAConnection();
         xaResource = xaConnection.getXAResource();
-        if (timeoutSec != null) {
+        //TODO 这个地方重新处理
+        if (jdbcConnectorOptions.getTransactionTimeoutSec().isPresent() ) {
             try {
-                xaResource.setTransactionTimeout(timeoutSec);
+                xaResource.setTransactionTimeout(jdbcConnectorOptions.getTransactionTimeoutSec().get());
             } catch (XAException e) {
                 throw new SQLException(e);
             }

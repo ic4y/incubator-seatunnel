@@ -19,6 +19,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection;
 
 import com.google.common.base.Preconditions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,15 +36,19 @@ import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.Properties;
 
-/** Simple JDBC connection provider. */
+/**
+ * Simple JDBC connection provider.
+ */
 @NotThreadSafe
-public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Serializable {
+public class SimpleJdbcConnectionProvider
+        implements JdbcConnectionProvider, Serializable
+{
 
     private static final Logger LOG = LoggerFactory.getLogger(SimpleJdbcConnectionProvider.class);
 
     private static final long serialVersionUID = 1L;
 
-    private final JdbcConnectionOptions jdbcOptions;
+    private final JdbcConnectorOptions jdbcOptions;
 
     private transient Driver loadedDriver;
     private transient Connection connection;
@@ -60,23 +65,28 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
         DriverManager.getDrivers();
     }
 
-    public SimpleJdbcConnectionProvider(JdbcConnectionOptions jdbcOptions) {
+    public SimpleJdbcConnectionProvider(JdbcConnectorOptions jdbcOptions)
+    {
         this.jdbcOptions = jdbcOptions;
     }
 
     @Override
-    public Connection getConnection() {
+    public Connection getConnection()
+    {
         return connection;
     }
 
     @Override
-    public boolean isConnectionValid() throws SQLException {
+    public boolean isConnectionValid()
+            throws SQLException
+    {
         return connection != null
                 && connection.isValid(jdbcOptions.getConnectionCheckTimeoutSeconds());
     }
 
     private static Driver loadDriver(String driverName)
-            throws SQLException, ClassNotFoundException {
+            throws SQLException, ClassNotFoundException
+    {
         Preconditions.checkNotNull(driverName);
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         while (drivers.hasMoreElements()) {
@@ -93,12 +103,15 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
                 Class.forName(driverName, true, Thread.currentThread().getContextClassLoader());
         try {
             return (Driver) clazz.newInstance();
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             throw new SQLException("Fail to create driver of class " + driverName, ex);
         }
     }
 
-    private Driver getLoadedDriver() throws SQLException, ClassNotFoundException {
+    private Driver getLoadedDriver()
+            throws SQLException, ClassNotFoundException
+    {
         if (loadedDriver == null) {
             loadedDriver = loadDriver(jdbcOptions.getDriverName());
         }
@@ -106,58 +119,47 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
     }
 
     @Override
-    public Connection getOrEstablishConnection() throws SQLException, ClassNotFoundException {
+    public Connection getOrEstablishConnection()
+            throws SQLException, ClassNotFoundException
+    {
         if (connection != null) {
             return connection;
         }
-//        if (jdbcOptions.getDataSourceName() != null && jdbcOptions.getDataSourceType() == DataSourceType.DATA_SOURCE){
-//            DataSource commonDataSource = null;
-//            try {
-//                commonDataSource = (DataSource) DataSourceUtils.buildCommonDataSource(jdbcOptions);
-//            }
-//            catch (Exception e) {
-//                throw new SQLException(e);
-//            }
-//
-//            connection =  commonDataSource.getConnection();
-//        }else
-         if (jdbcOptions.getDriverName() == null) {
-            connection =
-                    DriverManager.getConnection(
-                            jdbcOptions.getDbURL(),
-                            jdbcOptions.getUsername().orElse(null),
-                            jdbcOptions.getPassword().orElse(null));
-        } else {
-            Driver driver = getLoadedDriver();
-            Properties info = new Properties();
-            jdbcOptions.getUsername().ifPresent(user -> info.setProperty("user", user));
-            jdbcOptions.getPassword().ifPresent(password -> info.setProperty("password", password));
-            connection = driver.connect(jdbcOptions.getDbURL(), info);
-            if (connection == null) {
-                // Throw same exception as DriverManager.getConnection when no driver found to match
-                // caller expectation.
-                throw new SQLException(
-                        "No suitable driver found for " + jdbcOptions.getDbURL(), "08001");
-            }
+        Driver driver = getLoadedDriver();
+        Properties info = new Properties();
+        info.setProperty("user", jdbcOptions.getUsername());
+        info.setProperty("password", jdbcOptions.getPassword());
+        connection = driver.connect(jdbcOptions.getUrl(), info);
+        if (connection == null) {
+            // Throw same exception as DriverManager.getConnection when no driver found to match
+            // caller expectation.
+            throw new SQLException(
+                    "No suitable driver found for " + jdbcOptions.getUrl(), "08001");
         }
+
         return connection;
     }
 
     @Override
-    public void closeConnection() {
+    public void closeConnection()
+    {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException e) {
+            }
+            catch (SQLException e) {
                 LOG.warn("JDBC connection close failed.", e);
-            } finally {
+            }
+            finally {
                 connection = null;
             }
         }
     }
 
     @Override
-    public Connection reestablishConnection() throws SQLException, ClassNotFoundException {
+    public Connection reestablishConnection()
+            throws SQLException, ClassNotFoundException
+    {
         closeConnection();
         return getOrEstablishConnection();
     }

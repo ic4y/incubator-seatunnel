@@ -7,11 +7,13 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcOutputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExactlyOnceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExecutionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.ExceptionUtils;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.JdbcUtils;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.SerializableSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +40,9 @@ public class JdbcExactlyOnceSinkWriter
     private final SinkWriter.Context context;
 
     private final XaFacade xaFacade;
-//    private final XaGroupOps xaGroupOps;
+
     private final XidGenerator xidGenerator;
+
     private final JdbcOutputFormat<SeaTunnelRow, JdbcBatchStatementExecutor<SeaTunnelRow>> outputFormat;
 
 
@@ -47,31 +50,26 @@ public class JdbcExactlyOnceSinkWriter
 
     public JdbcExactlyOnceSinkWriter(
             SinkWriter.Context context,
-            String sql,
-            JdbcStatementBuilder<SeaTunnelRow> statementBuilder,
-            JdbcConnectionOptions jdbcConnectionOptions,
-            JdbcExecutionOptions executionOptions,
-            JdbcExactlyOnceOptions exactlyOnceOptions,
-            SerializableSupplier<XADataSource> dataSourceSupplier)
+            JdbcConnectorOptions jdbcConnectorOptions)
             throws IOException
     {
         Preconditions.checkArgument(
-                executionOptions.getMaxRetries() == 0,
+                jdbcConnectorOptions.getMaxRetries() == 0,
                 "JDBC XA sink requires maxRetries equal to 0, otherwise it could "
                         + "cause duplicates. See issue FLINK-22311 for details.");
 
         this.context = context;
         this.xidGenerator = XidGenerator.semanticXidGenerator();
         this.xaFacade =  XaFacade.fromJdbcConnectionOptions(
-                jdbcConnectionOptions,
-                exactlyOnceOptions.getTimeoutSec());
+                jdbcConnectorOptions);
 
+        JdbcStatementBuilder<SeaTunnelRow> statementBuilder = (st, row) -> JdbcUtils.setRecordToStatement(st, null, row);
 
         this.outputFormat = new JdbcOutputFormat<SeaTunnelRow, JdbcBatchStatementExecutor<SeaTunnelRow>>(
                 xaFacade,
-                        executionOptions,
+                        jdbcConnectorOptions,
                         () -> JdbcBatchStatementExecutor.simple(
-                                sql, statementBuilder, Function.identity()));
+                                jdbcConnectorOptions.getQuery(), statementBuilder, Function.identity()));
 
         open();
     }

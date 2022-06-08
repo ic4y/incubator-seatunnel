@@ -3,9 +3,11 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.sink;
 import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcOutputFormat;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExecutionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
@@ -36,17 +38,17 @@ public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSin
 
 
     public JdbcSinkWriter(
-            String sql,
             JdbcStatementBuilder<SeaTunnelRow> statementBuilder,
-            JdbcConnectionProvider connectionProvider,
-            JdbcExecutionOptions executionOptions)
+            JdbcConnectorOptions jdbcConnectorOptions)
             throws IOException
     {
 
+        JdbcConnectionProvider connectionProvider = new SimpleJdbcConnectionProvider(jdbcConnectorOptions);
+
         this.outputFormat = new JdbcOutputFormat<SeaTunnelRow, JdbcBatchStatementExecutor<SeaTunnelRow>>(
                 connectionProvider,
-                executionOptions,
-                () -> JdbcBatchStatementExecutor.simple(sql, statementBuilder, Function.identity()));
+                jdbcConnectorOptions,
+                () -> JdbcBatchStatementExecutor.simple(jdbcConnectorOptions.getQuery(), statementBuilder, Function.identity()));
         outputFormat.open();
 
     }
