@@ -22,7 +22,6 @@ import org.apache.seatunnel.api.sink.SinkWriter;
 import javax.transaction.xa.Xid;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 /**
  * Generates {@link Xid} from:
@@ -52,7 +51,7 @@ class SemanticXidGenerator
 
     @Override
     public void open() {
-        // globalTransactionId = job id + task index + checkpoint id
+        // globalTransactionId = task index + currentTimeMs
         gtridBuffer = new byte[Integer.BYTES + Long.BYTES];
         // branchQualifier = random bytes
         bqualBuffer = getRandomBytes(Integer.BYTES);
@@ -78,9 +77,10 @@ class SemanticXidGenerator
     }
 
     private static int readNumber(byte[] bytes, int offset, int numBytes) {
+        final int number = 0xff;
         int result = 0;
         for (int i = 0; i < numBytes; i++) {
-            result |= (bytes[offset + i] & 0xff) << Byte.SIZE * i;
+            result |= (bytes[offset + i] & number) << Byte.SIZE * i;
         }
         return result;
     }

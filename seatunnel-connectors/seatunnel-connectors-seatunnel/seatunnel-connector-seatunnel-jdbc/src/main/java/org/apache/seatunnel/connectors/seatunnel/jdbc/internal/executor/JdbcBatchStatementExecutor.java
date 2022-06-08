@@ -18,7 +18,6 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor;
 
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Function;

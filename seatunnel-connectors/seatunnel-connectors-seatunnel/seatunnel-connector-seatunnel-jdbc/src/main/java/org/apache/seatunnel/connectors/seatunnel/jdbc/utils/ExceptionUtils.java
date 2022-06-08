@@ -2,12 +2,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.utils;
 
 import java.io.IOException;
 
-/**
- * @Author: Liuli
- * @Date: 2022/5/30 22:38
- */
-public class ExceptionUtils
-{
+public class ExceptionUtils {
     public static void rethrow(Throwable t) {
         if (t instanceof Error) {
             throw (Error) t;
@@ -27,8 +22,7 @@ public class ExceptionUtils
      *
      * @param t The Throwable to be thrown.
      */
-    public static void rethrowIOException(Throwable t) throws IOException
-    {
+    public static void rethrowIOException(Throwable t) throws IOException {
         if (t instanceof IOException) {
             throw (IOException) t;
         } else if (t instanceof RuntimeException) {

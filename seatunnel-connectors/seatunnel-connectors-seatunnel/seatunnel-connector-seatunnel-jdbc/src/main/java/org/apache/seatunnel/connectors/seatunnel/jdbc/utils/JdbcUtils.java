@@ -18,11 +18,8 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.utils;
 
-
-
-import com.sun.rowset.internal.Row;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
-import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,14 +51,9 @@ public class JdbcUtils {
             LOG.warn(
                     "Column SQL types array doesn't match arity of passed Row! Check the passed array...");
         }
-        // TODO 这个地方需要优化处理 目前应为SeatunnelTyoeInfo不完善，所有没法到获取typesArray
         if (typesArray == null) {
             // no types provided
             for (int index = 0; index < row.getFields().length; index++) {
-//                LOG.warn(
-//                        "Unknown column type for column {}. Best effort approach to set its value: {}.",
-//                        index + 1,
-//                        row.getFields()[index]);
                 upload.setObject(index + 1, row.getFields()[index]);
             }
         } else {

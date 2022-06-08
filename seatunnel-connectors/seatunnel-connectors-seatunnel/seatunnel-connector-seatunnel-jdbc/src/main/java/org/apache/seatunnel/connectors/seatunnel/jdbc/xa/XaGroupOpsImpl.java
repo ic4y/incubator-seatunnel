@@ -17,8 +17,8 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.xa;
 
-
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
 
 public class XaGroupOpsImpl
         implements XaGroupOps {
@@ -77,8 +76,7 @@ public class XaGroupOpsImpl
     }
 
     @Override
-    public void rollback(List<XidInfo> xids)
-    {
+    public void rollback(List<XidInfo> xids) {
         for (XidInfo x : xids) {
             xaFacade.rollback(x.getXid());
         }

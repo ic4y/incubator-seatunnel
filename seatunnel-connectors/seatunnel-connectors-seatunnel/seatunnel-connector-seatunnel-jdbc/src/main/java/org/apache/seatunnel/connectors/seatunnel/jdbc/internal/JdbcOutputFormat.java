@@ -18,23 +18,22 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcExecutionOptions;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.xml.transform.Source;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -42,36 +41,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
- * A JDBC outputFormat that supports batching records before writing records to database.
+ * A JDBC outputFormat
  */
-
-public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In>>
-        implements Serializable
-{
+public class JdbcOutputFormat<I, E extends JdbcBatchStatementExecutor<I>>
+    implements Serializable {
 
     protected final JdbcConnectionProvider connectionProvider;
-
-    /**
-     * A factory for creating {@link JdbcBatchStatementExecutor} instance.
-     *
-     * @param <T> The type of instance.
-     */
-    public interface StatementExecutorFactory<T extends JdbcBatchStatementExecutor<?>>
-            extends Supplier<T>, Serializable {}
-
-    ;
 
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcOutputFormat.class);
 
     private final JdbcConnectorOptions jdbcConnectorOptions;
-    private final StatementExecutorFactory<JdbcExec> statementExecutorFactory;
+    private final StatementExecutorFactory<E> statementExecutorFactory;
 
-    private transient JdbcExec jdbcStatementExecutor;
+    private transient E jdbcStatementExecutor;
     private transient int batchCount = 0;
     private transient volatile boolean closed = false;
 
@@ -80,10 +65,9 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
     private transient volatile Exception flushException;
 
     public JdbcOutputFormat(
-            @Nonnull JdbcConnectionProvider connectionProvider,
-            @Nonnull JdbcConnectorOptions jdbcConnectorOptions,
-            @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory)
-    {
+        @Nonnull JdbcConnectionProvider connectionProvider,
+        @Nonnull JdbcConnectorOptions jdbcConnectorOptions,
+        @Nonnull StatementExecutorFactory<E> statementExecutorFactory) {
         this.connectionProvider = checkNotNull(connectionProvider);
         this.jdbcConnectorOptions = checkNotNull(jdbcConnectorOptions);
         this.statementExecutorFactory = checkNotNull(statementExecutorFactory);
@@ -94,56 +78,49 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
      */
 
     public void open()
-            throws IOException
-    {
+        throws IOException {
         try {
-            //初始化连接
             connectionProvider.getOrEstablishConnection();
         }
         catch (Exception e) {
             throw new IOException("unable to open JDBC writer", e);
         }
-        //获取拥有连接的执行器
         jdbcStatementExecutor = createAndOpenStatementExecutor(statementExecutorFactory);
 
-        //若配置了刷新事件或数量刷新 需要定时线程去执行flush
-        //TODO 实时任务需要校验，在exactlyOnce下IntervalMs、BatchSize 不能配置或者不生效
-        //TODO 离线任务必须配置IntervalMs、BatchSize中任意一项，或者填充默认值
         if (jdbcConnectorOptions.getBatchIntervalMs() != 0 && jdbcConnectorOptions.getBatchSize() != 1) {
             this.scheduler =
-                    Executors.newScheduledThreadPool(
-                            1, runnable -> {
-                                AtomicInteger cnt = new AtomicInteger(0);
-                                Thread thread = new Thread(runnable);
-                                thread.setDaemon(true);
-                                thread.setName("jdbc-upsert-output-format" + "-" + cnt.incrementAndGet());
-                                return thread;
-                            });
+                Executors.newScheduledThreadPool(
+                    1, runnable -> {
+                        AtomicInteger cnt = new AtomicInteger(0);
+                        Thread thread = new Thread(runnable);
+                        thread.setDaemon(true);
+                        thread.setName("jdbc-upsert-output-format" + "-" + cnt.incrementAndGet());
+                        return thread;
+                    });
             this.scheduledFuture =
-                    this.scheduler.scheduleWithFixedDelay(
-                            () -> {
-                                synchronized (JdbcOutputFormat.this) {
-                                    if (!closed) {
-                                        try {
-                                            flush();
-                                        }
-                                        catch (Exception e) {
-                                            flushException = e;
-                                        }
-                                    }
+                this.scheduler.scheduleWithFixedDelay(
+                    () -> {
+                        synchronized (JdbcOutputFormat.this) {
+                            if (!closed) {
+                                try {
+                                    flush();
                                 }
-                            },
-                            jdbcConnectorOptions.getBatchIntervalMs(),
-                            jdbcConnectorOptions.getBatchIntervalMs(),
-                            TimeUnit.MILLISECONDS);
+                                catch (Exception e) {
+                                    flushException = e;
+                                }
+                            }
+                        }
+                    },
+                    jdbcConnectorOptions.getBatchIntervalMs(),
+                    jdbcConnectorOptions.getBatchIntervalMs(),
+                    TimeUnit.MILLISECONDS);
         }
     }
 
-    private JdbcExec createAndOpenStatementExecutor(
-            StatementExecutorFactory<JdbcExec> statementExecutorFactory)
-            throws IOException
-    {
-        JdbcExec exec = statementExecutorFactory.get();
+    private E createAndOpenStatementExecutor(
+        StatementExecutorFactory<E> statementExecutorFactory)
+        throws IOException {
+        E exec = statementExecutorFactory.get();
         try {
             exec.prepareStatements(connectionProvider.getConnection());
         }
@@ -153,23 +130,20 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
         return exec;
     }
 
-    private void checkFlushException()
-    {
+    private void checkFlushException() {
         if (flushException != null) {
             throw new RuntimeException("Writing records to JDBC failed.", flushException);
         }
     }
 
-    //对外调用写入数据到buffer
-    public final synchronized void writeRecord(In record)
-            throws IOException
-    {
+    public final synchronized void writeRecord(I record)
+        throws IOException {
         checkFlushException();
         try {
             addToBatch(record);
             batchCount++;
             if (jdbcConnectorOptions.getBatchSize() > 0
-                    && batchCount >= jdbcConnectorOptions.getBatchSize()) {
+                && batchCount >= jdbcConnectorOptions.getBatchSize()) {
                 flush();
             }
         }
@@ -178,17 +152,15 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
         }
     }
 
-    protected void addToBatch(In record)
-            throws SQLException
-    {
+    protected void addToBatch(I record)
+        throws SQLException {
         jdbcStatementExecutor.addToBatch(record);
     }
 
     public synchronized void flush()
-            throws IOException
-    {
+        throws IOException {
         checkFlushException();
-
+        final int sleepMs = 1000;
         for (int i = 0; i <= jdbcConnectorOptions.getMaxRetries(); i++) {
             try {
                 attemptFlush();
@@ -207,33 +179,31 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
                 }
                 catch (Exception exception) {
                     LOG.error(
-                            "JDBC connection is not valid, and reestablish connection failed.",
-                            exception);
+                        "JDBC connection is not valid, and reestablish connection failed.",
+                        exception);
                     throw new IOException("Reestablish JDBC connection failed", exception);
                 }
                 try {
-                    Thread.sleep(1000 * i);
+                    Thread.sleep(sleepMs * i);
                 }
                 catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     throw new IOException(
-                            "unable to flush; interrupted while doing another attempt", e);
+                        "unable to flush; interrupted while doing another attempt", e);
                 }
             }
         }
     }
 
     protected void attemptFlush()
-            throws SQLException
-    {
+        throws SQLException {
         jdbcStatementExecutor.executeBatch();
     }
 
     /**
      * Executes prepared statement and closes all resources of this instance.
      */
-    public synchronized void close()
-    {
+    public synchronized void close() {
         if (!closed) {
             closed = true;
 
@@ -266,18 +236,24 @@ public class JdbcOutputFormat<In, JdbcExec extends JdbcBatchStatementExecutor<In
     }
 
     public void updateExecutor(boolean reconnect)
-            throws SQLException, ClassNotFoundException
-    {
+        throws SQLException, ClassNotFoundException {
         jdbcStatementExecutor.closeStatements();
         jdbcStatementExecutor.prepareStatements(
-                reconnect
-                        ? connectionProvider.reestablishConnection()
-                        : connectionProvider.getConnection());
+            reconnect ? connectionProvider.reestablishConnection() : connectionProvider.getConnection());
     }
 
     @VisibleForTesting
-    public Connection getConnection()
-    {
+    public Connection getConnection() {
         return connectionProvider.getConnection();
     }
+
+    /**
+     * A factory for creating {@link JdbcBatchStatementExecutor} instance.
+     *
+     * @param <T> The type of instance.
+     */
+    public interface StatementExecutorFactory<T extends JdbcBatchStatementExecutor<?>>
+        extends Supplier<T>, Serializable {}
+
+    ;
 }

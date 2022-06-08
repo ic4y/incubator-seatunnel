@@ -2,12 +2,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options;
 
 import java.io.Serializable;
 
-/**
- * @Author: Liuli
- * @Date: 2022/6/7 18:14
- */
-public class JdbcConfig implements Serializable
-{
+public class JdbcConfig implements Serializable {
 
     public static final String URL = "url";
 

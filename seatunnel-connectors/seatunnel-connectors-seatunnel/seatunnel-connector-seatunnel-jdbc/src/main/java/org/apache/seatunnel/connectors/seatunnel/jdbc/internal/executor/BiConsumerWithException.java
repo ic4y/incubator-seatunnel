@@ -18,7 +18,6 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor;
 
-
 import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.ExceptionUtils;
 
 import java.util.function.BiConsumer;
@@ -30,7 +29,6 @@ import java.util.function.BiConsumer;
  * @param <U> type of the second argument
  * @param <E> type of the thrown exception
  */
-@FunctionalInterface
 public interface BiConsumerWithException<T, U, E extends Throwable> {
 
     /**

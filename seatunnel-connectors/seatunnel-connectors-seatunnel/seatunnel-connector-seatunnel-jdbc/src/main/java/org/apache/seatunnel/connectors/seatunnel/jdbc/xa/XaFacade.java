@@ -18,19 +18,15 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.xa;
 
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
 
-import javax.sql.XADataSource;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.function.Supplier;
 
 /**
-
  *
  * <p>Typical workflow:
  *
@@ -48,13 +44,6 @@ import java.util.function.Supplier;
 
 public interface XaFacade
         extends JdbcConnectionProvider, Serializable, AutoCloseable {
-
-    /** @return a non-serializable instance. */
-    static XaFacade fromXaDataSourceSupplier(
-            Supplier<XADataSource> dataSourceSupplier,
-            Integer timeoutSec) {
-        return  new XaFacadeImpl(dataSourceSupplier, timeoutSec);
-    }
 
     static XaFacade fromJdbcConnectionOptions(
             JdbcConnectorOptions jdbcConnectorOptions) {
