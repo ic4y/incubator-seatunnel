@@ -24,11 +24,19 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import scala.Tuple2;
 
 /** Utils for jdbc connectors. */
 public class JdbcUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcUtils.class);
+    private static final Pattern COMPILE = Pattern.compile("[\\s]*select[\\s]*(.*)from[\\s]*([\\S]+)(.*)",
+        Pattern.CASE_INSENSITIVE);
 
     /**
      * Adds a record to the prepared statement.
@@ -153,6 +161,32 @@ public class JdbcUtils {
                 enrichedException.setStackTrace(e.getStackTrace());
                 throw enrichedException;
             }
+        }
+    }
+
+    /**
+     * Use Pattern gets the table and field names of the query SQL
+     * @param selectSql query SQL
+     * @return  table and field names
+     */
+    public static Tuple2<String, Set<String>> getTableNameAndFields(String selectSql) {
+        Matcher matcher = COMPILE.matcher(selectSql);
+        String tableName;
+        Set<String> fields = null;
+        if (matcher.find()) {
+            String var = matcher.group(1);
+            tableName = matcher.group(2);
+            if (!"*".equals(var.trim())) {
+                LinkedHashSet<String> vars = new LinkedHashSet<>();
+                String[] split = var.split(",");
+                for (String s : split) {
+                    vars.add(s.trim());
+                }
+                fields = vars;
+            }
+            return new Tuple2<>(tableName, fields);
+        } else {
+            throw new IllegalArgumentException("can't find tableName and fields in sql :" + selectSql);
         }
     }
 }
