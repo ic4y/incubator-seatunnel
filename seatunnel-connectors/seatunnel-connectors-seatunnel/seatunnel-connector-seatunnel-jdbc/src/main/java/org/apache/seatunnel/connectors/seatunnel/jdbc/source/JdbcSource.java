@@ -12,6 +12,7 @@ import org.apache.seatunnel.api.source.SourceSplitEnumerator;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSourceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcInputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.converter.JdbcRowConverter;
@@ -19,7 +20,7 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.Simple
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectTypeMapper;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.mysql.MySqlTypeMapper;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.mysql.MysqlJdbcRowConverter;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSourceState;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
@@ -44,7 +45,8 @@ import scala.Tuple2;
 public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit, JdbcSourceState> {
     protected static final Logger LOG = LoggerFactory.getLogger(JdbcSource.class);
 
-    SeaTunnelContext seaTunnelContext;
+    private SeaTunnelContext seaTunnelContext;
+    private JdbcSourceOptions jdbcSourceOptions;
 
     private JdbcInputFormat inputFormat;
     private JdbcRowConverter jdbcRowConverter;
@@ -63,18 +65,12 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
     @Override
     public void prepare(Config pluginConfig) throws PrepareFailException {
 
-        JdbcConnectorOptions jdbcConnectorOptions = JdbcConnectorOptions.builder()
-            .withDriverName("com.mysql.cj.jdbc.Driver")
-            .withUrl("jdbc:mysql://localhost/test")
-            .withPassword("123456")
-            .withUsername("root")
-            .build();
-
+        jdbcSourceOptions = new JdbcSourceOptions(pluginConfig);
         jdbcDialectTypeMapper = new MySqlTypeMapper();
-        jdbcConnectionProvider = new SimpleJdbcConnectionProvider(jdbcConnectorOptions);
+        jdbcConnectionProvider = new SimpleJdbcConnectionProvider(jdbcSourceOptions.getJdbcConnectionOptions());
         jdbcRowConverter = new MysqlJdbcRowConverter();
         inputFormat = new JdbcInputFormat(
-            new SimpleJdbcConnectionProvider(jdbcConnectorOptions),
+            new SimpleJdbcConnectionProvider(jdbcSourceOptions.getJdbcConnectionOptions()),
             jdbcRowConverter,
             sql,
             0,
@@ -107,7 +103,6 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
             //TODO 这个地方需要明确获取RowTypeInfo 是否需要结束程序
             LOG.warn("get row type info exception", e);
         }
-        System.out.println("--->" + seaTunnelRowTypeInfo);
         return seaTunnelRowTypeInfo;
     }
 
