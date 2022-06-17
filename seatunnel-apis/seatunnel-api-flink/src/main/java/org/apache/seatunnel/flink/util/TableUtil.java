@@ -39,6 +39,9 @@ public final class TableUtil {
         if (isAppend) {
             return tableEnvironment.toAppendStream(table, typeInfo);
         }
+        System.out.println(table);
+        System.out.println("-------");
+        System.out.println(typeInfo);
         return tableEnvironment
                 .toRetractStream(table, typeInfo)
                 .filter(row -> row.f0)

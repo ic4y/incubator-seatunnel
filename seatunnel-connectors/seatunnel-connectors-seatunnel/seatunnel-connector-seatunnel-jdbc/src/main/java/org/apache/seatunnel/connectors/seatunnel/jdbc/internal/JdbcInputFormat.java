@@ -19,6 +19,7 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal;
 
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
+import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.converter.JdbcRowConverter;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.source.JdbcSourceSplit;
@@ -53,6 +54,7 @@ public class JdbcInputFormat implements Serializable {
     protected JdbcConnectionProvider connectionProvider;
     protected JdbcRowConverter jdbcRowConverter;
     protected String queryTemplate;
+    protected SeaTunnelRowTypeInfo typeInfo;
     protected int fetchSize;
     // Boolean to distinguish between default value and explicitly set autoCommit mode.
     protected Boolean autoCommit;
@@ -65,12 +67,14 @@ public class JdbcInputFormat implements Serializable {
 
     public JdbcInputFormat(JdbcConnectionProvider connectionProvider,
                            JdbcRowConverter jdbcRowConverter,
+                           SeaTunnelRowTypeInfo typeInfo,
                            String queryTemplate,
                            int fetchSize,
                            Boolean autoCommit
     ) {
         this.connectionProvider = connectionProvider;
         this.jdbcRowConverter = jdbcRowConverter;
+        this.typeInfo = typeInfo;
         this.queryTemplate = queryTemplate;
         this.fetchSize = fetchSize;
         this.autoCommit = autoCommit;
@@ -205,7 +209,7 @@ public class JdbcInputFormat implements Serializable {
             if (!hasNext) {
                 return null;
             }
-            SeaTunnelRow seaTunnelRow = jdbcRowConverter.toInternal(resultSet, resultSet.getMetaData());
+            SeaTunnelRow seaTunnelRow = jdbcRowConverter.toInternal(resultSet, resultSet.getMetaData(), typeInfo);
             // update hasNext after we've read the record
             hasNext = resultSet.next();
             return seaTunnelRow;

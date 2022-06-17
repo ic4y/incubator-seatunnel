@@ -2,7 +2,6 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.mysql;
 
 import org.apache.seatunnel.api.table.type.BasicType;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
-import org.apache.seatunnel.api.table.type.TimestampType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialect;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectTypeMapper;
 
@@ -71,9 +70,14 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
     private static final String MYSQL_VARBINARY = "VARBINARY";
     private static final String MYSQL_GEOMETRY = "GEOMETRY";
 
-    // TODO unSupport
+
     String databaseVersion;
     String driverVersion;
+
+//    public MySqlTypeMapper(String databaseVersion, String driverVersion) {
+//        this.databaseVersion = databaseVersion;
+//        this.driverVersion = driverVersion;
+//    }
 
     @Override
     public SeaTunnelDataType<?> mapping(ResultSetMetaData metadata, int colIndex) throws SQLException {
@@ -82,27 +86,13 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
         int precision = metadata.getPrecision(colIndex);
         int scale = metadata.getScale(colIndex);
 
-        System.out.println("------>"+mysqlType);
+        System.out.println("----" + columnName + "-->" + mysqlType);
         switch (mysqlType) {
             case MYSQL_BIT:
                 return BasicType.BOOLEAN;
-            case MYSQL_TINYBLOB:
-            case MYSQL_MEDIUMBLOB:
-            case MYSQL_BLOB:
-            case MYSQL_LONGBLOB:
-            case MYSQL_VARBINARY:
-            case MYSQL_BINARY:
-                // BINARY is not supported in MySqlDialect now.
-                // VARBINARY(n) is not supported in MySqlDialect when 'n' is not equals to
-                // Integer.MAX_VALUE. Please see
-                // org.apache.flink.connector.jdbc.dialect.mysql.MySqlDialect#supportedTypes and
-                // org.apache.flink.connector.jdbc.dialect.AbstractDialect#validate for more
-                // details.
-                return BasicType.BYTE;
             case MYSQL_TINYINT:
             case MYSQL_TINYINT_UNSIGNED:
             case MYSQL_SMALLINT:
-                return BasicType.SHORT;
             case MYSQL_SMALLINT_UNSIGNED:
             case MYSQL_MEDIUMINT:
             case MYSQL_MEDIUMINT_UNSIGNED:
@@ -112,9 +102,9 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
             case MYSQL_INT_UNSIGNED:
             case MYSQL_INTEGER_UNSIGNED:
             case MYSQL_BIGINT:
-                return BasicType.BIG_INTEGER;
-            //TODO DECIMAL not set precision , scale
+                return BasicType.LONG;
             case MYSQL_BIGINT_UNSIGNED:
+                return BasicType.BIG_INTEGER;
             case MYSQL_DECIMAL:
             case MYSQL_DECIMAL_UNSIGNED:
                 return BasicType.BIG_DECIMAL;
@@ -128,14 +118,11 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
             case MYSQL_DOUBLE_UNSIGNED:
                 LOG.warn("{} will probably cause value overflow.", MYSQL_DOUBLE_UNSIGNED);
                 return BasicType.DOUBLE;
-            //TODO CHAR not set precision
             case MYSQL_CHAR:
             case MYSQL_TINYTEXT:
             case MYSQL_MEDIUMTEXT:
             case MYSQL_TEXT:
-                return BasicType.CHARACTER;
             case MYSQL_VARCHAR:
-                return BasicType.STRING;
             case MYSQL_JSON:
                 return BasicType.STRING;
             case MYSQL_LONGTEXT:
@@ -148,10 +135,19 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
             case MYSQL_DATE:
             case MYSQL_TIME:
             case MYSQL_DATETIME:
-                return BasicType.DATE;
-            case MYSQL_TIMESTAMP:
-                return new TimestampType(precision);
             case MYSQL_YEAR:
+                return BasicType.DATE;
+
+            //Doesn't support timestamp yet
+            case MYSQL_TIMESTAMP:
+            //Doesn't support binary yet
+            case MYSQL_TINYBLOB:
+            case MYSQL_MEDIUMBLOB:
+            case MYSQL_BLOB:
+            case MYSQL_LONGBLOB:
+            case MYSQL_VARBINARY:
+            case MYSQL_BINARY:
+
             case MYSQL_GEOMETRY:
             case MYSQL_UNKNOWN:
             default:

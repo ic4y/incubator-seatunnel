@@ -19,6 +19,7 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.converter;
 
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
+import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
@@ -36,5 +37,5 @@ public interface JdbcRowConverter extends Serializable {
      *
      * @param rs ResultSet from JDBC
      */
-    SeaTunnelRow toInternal(ResultSet rs, ResultSetMetaData metaData) throws SQLException;
+    SeaTunnelRow toInternal(ResultSet rs, ResultSetMetaData metaData, SeaTunnelRowTypeInfo typeInfo) throws SQLException;
 }

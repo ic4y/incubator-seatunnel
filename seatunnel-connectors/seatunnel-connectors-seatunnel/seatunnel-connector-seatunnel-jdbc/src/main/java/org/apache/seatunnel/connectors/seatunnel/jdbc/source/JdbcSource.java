@@ -12,6 +12,7 @@ import org.apache.seatunnel.api.source.SourceSplitEnumerator;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowTypeInfo;
+import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSourceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcInputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
@@ -47,15 +48,14 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
 
     private SeaTunnelContext seaTunnelContext;
     private JdbcSourceOptions jdbcSourceOptions;
+    private SeaTunnelRowTypeInfo typeInfo;
 
     private JdbcInputFormat inputFormat;
     private JdbcRowConverter jdbcRowConverter;
     private JdbcDialectTypeMapper jdbcDialectTypeMapper;
     private JdbcConnectionProvider jdbcConnectionProvider;
 
-    String tableName;
-    Set<String> fieldsName;
-    String sql = "select name, age from test1";
+    String sql = "select * from type_number";
 
     @Override
     public String getPluginName() {
@@ -69,17 +69,20 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
         jdbcDialectTypeMapper = new MySqlTypeMapper();
         jdbcConnectionProvider = new SimpleJdbcConnectionProvider(jdbcSourceOptions.getJdbcConnectionOptions());
         jdbcRowConverter = new MysqlJdbcRowConverter();
+
+        try {
+            typeInfo = initTableField(jdbcConnectionProvider.getOrEstablishConnection());
+        } catch (Exception e) {
+            throw new PrepareFailException("jdbc", PluginType.SOURCE, e.getMessage());
+        }
         inputFormat = new JdbcInputFormat(
-            new SimpleJdbcConnectionProvider(jdbcSourceOptions.getJdbcConnectionOptions()),
+            jdbcConnectionProvider,
             jdbcRowConverter,
+            typeInfo,
             sql,
             0,
             true
         );
-
-        Tuple2<String, Set<String>> tableNameAndFields = getTableNameAndFields(sql);
-        tableName = tableNameAndFields._1;
-        fieldsName = tableNameAndFields._2;
     }
 
     @Override
@@ -99,10 +102,12 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
         try {
             conn = jdbcConnectionProvider.getOrEstablishConnection();
             seaTunnelRowTypeInfo = initTableField(conn);
+            System.out.println("=====>" + seaTunnelRowTypeInfo);
         } catch (Exception e) {
             //TODO 这个地方需要明确获取RowTypeInfo 是否需要结束程序
             LOG.warn("get row type info exception", e);
         }
+        this.typeInfo = seaTunnelRowTypeInfo;
         return seaTunnelRowTypeInfo;
     }
 
