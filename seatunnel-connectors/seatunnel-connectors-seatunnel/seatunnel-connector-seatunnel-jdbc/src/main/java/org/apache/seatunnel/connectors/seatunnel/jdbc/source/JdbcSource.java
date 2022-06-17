@@ -1,7 +1,5 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.source;
 
-import static org.apache.seatunnel.connectors.seatunnel.jdbc.utils.JdbcUtils.getTableNameAndFields;
-
 import org.apache.seatunnel.api.common.PrepareFailException;
 import org.apache.seatunnel.api.common.SeaTunnelContext;
 import org.apache.seatunnel.api.serialization.DefaultSerializer;
@@ -16,12 +14,10 @@ import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSourceOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcInputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.converter.JdbcRowConverter;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialect;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectLoader;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectTypeMapper;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.mysql.MySqlTypeMapper;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.mysql.MysqlJdbcRowConverter;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSourceState;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
@@ -34,14 +30,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
-import java.util.Set;
 
-import scala.Tuple2;
-
-/**
- * @Author: Liuli
- * @Date: 2022/6/14 20:52
- */
 @AutoService(SeaTunnelSource.class)
 public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit, JdbcSourceState> {
     protected static final Logger LOG = LoggerFactory.getLogger(JdbcSource.class);
@@ -50,12 +39,9 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
     private JdbcSourceOptions jdbcSourceOptions;
     private SeaTunnelRowTypeInfo typeInfo;
 
+    private JdbcDialect jdbcDialect;
     private JdbcInputFormat inputFormat;
-    private JdbcRowConverter jdbcRowConverter;
-    private JdbcDialectTypeMapper jdbcDialectTypeMapper;
     private JdbcConnectionProvider jdbcConnectionProvider;
-
-    String sql = "select * from type_number";
 
     @Override
     public String getPluginName() {
@@ -66,9 +52,8 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
     public void prepare(Config pluginConfig) throws PrepareFailException {
 
         jdbcSourceOptions = new JdbcSourceOptions(pluginConfig);
-        jdbcDialectTypeMapper = new MySqlTypeMapper();
         jdbcConnectionProvider = new SimpleJdbcConnectionProvider(jdbcSourceOptions.getJdbcConnectionOptions());
-        jdbcRowConverter = new MysqlJdbcRowConverter();
+        jdbcDialect = JdbcDialectLoader.load(jdbcSourceOptions.getJdbcConnectionOptions().getUrl());
 
         try {
             typeInfo = initTableField(jdbcConnectionProvider.getOrEstablishConnection());
@@ -77,9 +62,9 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
         }
         inputFormat = new JdbcInputFormat(
             jdbcConnectionProvider,
-            jdbcRowConverter,
+            jdbcDialect.getRowConverter(),
             typeInfo,
-            sql,
+            jdbcSourceOptions.getJdbcConnectionOptions().query,
             0,
             true
         );
@@ -102,9 +87,7 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
         try {
             conn = jdbcConnectionProvider.getOrEstablishConnection();
             seaTunnelRowTypeInfo = initTableField(conn);
-            System.out.println("=====>" + seaTunnelRowTypeInfo);
         } catch (Exception e) {
-            //TODO 这个地方需要明确获取RowTypeInfo 是否需要结束程序
             LOG.warn("get row type info exception", e);
         }
         this.typeInfo = seaTunnelRowTypeInfo;
@@ -132,11 +115,11 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
     }
 
     private SeaTunnelRowTypeInfo initTableField(Connection conn) {
+        JdbcDialectTypeMapper jdbcDialectTypeMapper = jdbcDialect.getJdbcDialectTypeMapper();
         ArrayList<SeaTunnelDataType<?>> seaTunnelDataTypes = new ArrayList<>();
         ArrayList<String> fieldNames = new ArrayList<>();
-
         try {
-            PreparedStatement ps = conn.prepareStatement(sql);
+            PreparedStatement ps = conn.prepareStatement(jdbcSourceOptions.getJdbcConnectionOptions().getQuery());
             ResultSetMetaData resultSetMetaData = ps.getMetaData();
             for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
                 fieldNames.add(resultSetMetaData.getColumnName(i));

@@ -50,12 +50,6 @@ public class JdbcSourceReader implements SourceReader<SeaTunnelRow, JdbcSourceSp
             inputFormat.open(split);
             while (!inputFormat.reachedEnd()) {
                 SeaTunnelRow seaTunnelRow = inputFormat.nextRecord();
-                System.out.println("---------------");
-//                for (Object o : seaTunnelRow.getFields()){
-//                    System.out.println(o.getClass().getName());
-//                    System.out.println(o);
-//                }
-
                 output.collect(seaTunnelRow);
             }
             inputFormat.close();

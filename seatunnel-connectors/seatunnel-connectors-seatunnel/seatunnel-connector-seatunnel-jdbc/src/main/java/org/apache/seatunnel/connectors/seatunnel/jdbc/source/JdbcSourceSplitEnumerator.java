@@ -33,7 +33,6 @@ public class JdbcSourceSplitEnumerator implements SourceSplitEnumerator<JdbcSour
         JdbcSourceSplit split = splits.take();
         enumeratorContext.assignSplit(taskId, split);
         enumeratorContext.signalNoMoreSplits(taskId);
-        System.out.println("----assignSplit--->");
     }
 
     @Override

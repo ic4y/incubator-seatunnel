@@ -5,17 +5,12 @@ import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialect;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectTypeMapper;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-/**
- * @Author: Liuli
- * @Date: 2022/6/14 15:12
- */
 public class MySqlTypeMapper implements JdbcDialectTypeMapper {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcDialect.class);
@@ -70,23 +65,12 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
     private static final String MYSQL_VARBINARY = "VARBINARY";
     private static final String MYSQL_GEOMETRY = "GEOMETRY";
 
-
-    String databaseVersion;
-    String driverVersion;
-
-//    public MySqlTypeMapper(String databaseVersion, String driverVersion) {
-//        this.databaseVersion = databaseVersion;
-//        this.driverVersion = driverVersion;
-//    }
-
     @Override
     public SeaTunnelDataType<?> mapping(ResultSetMetaData metadata, int colIndex) throws SQLException {
         String mysqlType = metadata.getColumnTypeName(colIndex).toUpperCase();
         String columnName = metadata.getColumnName(colIndex);
         int precision = metadata.getPrecision(colIndex);
         int scale = metadata.getScale(colIndex);
-
-        System.out.println("----" + columnName + "-->" + mysqlType);
         switch (mysqlType) {
             case MYSQL_BIT:
                 return BasicType.BOOLEAN;
@@ -154,8 +138,8 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
                 final String jdbcColumnName = metadata.getColumnName(colIndex);
                 throw new UnsupportedOperationException(
                     String.format(
-                        "Doesn't support MySQL type '%s' on column '%s' in MySQL version %s, driver version %s yet.",
-                        mysqlType, jdbcColumnName, databaseVersion, driverVersion));
+                        "Doesn't support MySQL type '%s' on column '%s'  yet.",
+                        mysqlType, jdbcColumnName));
         }
     }
 }

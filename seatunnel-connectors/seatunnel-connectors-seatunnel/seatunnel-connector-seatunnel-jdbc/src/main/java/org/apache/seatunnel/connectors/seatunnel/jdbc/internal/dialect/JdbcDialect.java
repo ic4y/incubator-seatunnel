@@ -18,16 +18,9 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect;
 
-
-import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
-import org.apache.seatunnel.api.table.type.SeaTunnelRow;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.converter.JdbcRowConverter;
 
 import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Optional;
 
 /**
  * Represents a dialect of SQL implemented by a particular JDBC system. Dialects should be immutable
@@ -44,10 +37,17 @@ public interface JdbcDialect extends Serializable {
     String dialectName();
 
     /**
-     * Convert data retrieved from {@link ResultSet} to internal {@link org.apache.seatunnel.api.table.type.SeaTunnelRow}.
+     * Get converter that convert jdbc object to seatunnel internal object.
      *
-     * @param resultSet ResultSet from JDBC
+     * @return a row converter for the database
      */
-    Collection<SeaTunnelRow> toInternal(ResultSet resultSet) throws SQLException;
+    JdbcRowConverter getRowConverter();
+
+
+    /**
+     * get jdbc meta-information type to seatunnel data type mapper.
+     * @return a type mapper for the database
+     */
+    JdbcDialectTypeMapper getJdbcDialectTypeMapper();
 
 }

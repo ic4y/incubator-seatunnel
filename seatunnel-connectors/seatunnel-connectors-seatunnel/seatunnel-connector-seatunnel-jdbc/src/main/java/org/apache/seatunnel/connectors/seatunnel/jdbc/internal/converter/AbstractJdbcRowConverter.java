@@ -18,8 +18,6 @@
 
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.converter;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.apache.seatunnel.api.table.type.ArrayType;
 import org.apache.seatunnel.api.table.type.BasicType;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
@@ -31,8 +29,6 @@ import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,24 +44,6 @@ public abstract class AbstractJdbcRowConverter implements JdbcRowConverter {
     public AbstractJdbcRowConverter() {
     }
 
-//    @Override
-//    public SeaTunnelRow toInternal(ResultSet rs, ResultSetMetaData metaData) throws SQLException {
-//
-//        List<Object> fields = new ArrayList<>();
-//        Map<String, Object> fieldMap = new HashMap<>();
-//
-//        for (int i = 1; i <= metaData.getColumnCount(); i++) {
-//            Object seatunnelField = new Object();
-//            String name = metaData.getColumnName(i);
-//            int columnType = metaData.getColumnType(i);
-//            Object object = rs.getObject(i);
-//            System.out.println("----" + name + "------->" + object.getClass().getName());
-//            fields.add(seatunnelField);
-//            fieldMap.put(name, seatunnelField);
-//        }
-//
-//        return new SeaTunnelRow(fields.toArray(), fieldMap);
-//    }
     @Override
     @SuppressWarnings("checkstyle:Indentation")
     public SeaTunnelRow toInternal(ResultSet rs, ResultSetMetaData metaData, SeaTunnelRowTypeInfo typeInfo) throws SQLException {
@@ -77,8 +55,6 @@ public abstract class AbstractJdbcRowConverter implements JdbcRowConverter {
         for (int i = 1; i <= seaTunnelDataTypes.length; i++) {
             Object seatunnelField;
             String name = metaData.getColumnName(i);
-            Object object = rs.getObject(i);
-            System.out.println("----" + name + "------->" + object.getClass().getName());
             SeaTunnelDataType<?> seaTunnelDataType = seaTunnelDataTypes[i - 1];
             if (seaTunnelDataType instanceof TimestampType) {
                 TimestampType timestampType = (TimestampType) seaTunnelDataType;
@@ -104,15 +80,12 @@ public abstract class AbstractJdbcRowConverter implements JdbcRowConverter {
             } else if (BasicType.STRING.equals(seaTunnelDataType)) {
                 seatunnelField = rs.getString(i);
             } else if (BasicType.DATE.equals(seaTunnelDataType)) {
-                Object date = rs.getObject(i);
-                System.out.println("----ccccc-------+"+date.getClass().getName());
                 seatunnelField = rs.getObject(i);
             } else if (new ArrayType<>(BasicType.BYTE).equals(seaTunnelDataType)) {
                 seatunnelField = rs.getByte(i);
             } else {
                 throw new IllegalStateException("Unexpected value: " + seaTunnelDataType);
             }
-
 
             fields.add(seatunnelField);
             fieldMap.put(name, seatunnelField);

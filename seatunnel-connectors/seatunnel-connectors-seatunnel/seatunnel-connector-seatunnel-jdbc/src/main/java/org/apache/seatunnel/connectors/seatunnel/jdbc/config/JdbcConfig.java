@@ -62,8 +62,6 @@ public class JdbcConfig implements Serializable {
     public static final String PARTITION_UPPER_BOUND = "partition_upper_bound";
     public static final String PARTITION_LOWER_BOUND = "partition_lower_bound";
 
-
-
     public static JdbcConnectionOptions buildJdbcConnectionOptions(Config config) {
 
         JdbcConnectionOptions jdbcOptions = new JdbcConnectionOptions();

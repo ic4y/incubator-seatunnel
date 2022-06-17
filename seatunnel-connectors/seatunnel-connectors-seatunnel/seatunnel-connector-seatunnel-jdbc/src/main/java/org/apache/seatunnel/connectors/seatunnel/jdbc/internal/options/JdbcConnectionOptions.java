@@ -41,7 +41,7 @@ public class JdbcConnectionOptions
 
     public int batchSize = DEFAULT_BATCH_SIZE;
     public int batchIntervalMs = DEFAULT_BATCH_INTERVAL_MS;
-    
+
     public String xaDataSourceClassName;
 
     public int maxCommitAttempts = DEFAULT_MAX_COMMIT_ATTEMPTS;
@@ -99,11 +99,11 @@ public class JdbcConnectionOptions
         return transactionTimeoutSec < 0 ? Optional.empty() : Optional.of(transactionTimeoutSec);
     }
 
-    public static jdbcConnectionOptionsBuilder builder() {
-        return new jdbcConnectionOptionsBuilder();
+    public static JdbcConnectionOptionsBuilder builder() {
+        return new JdbcConnectionOptionsBuilder();
     }
 
-    public static final class jdbcConnectionOptionsBuilder {
+    public static final class JdbcConnectionOptionsBuilder {
         private String url;
         private String driverName;
         private int connectionCheckTimeoutSeconds = DEFAULT_CONNECTION_CHECK_TIMEOUT_SEC;
@@ -117,65 +117,65 @@ public class JdbcConnectionOptions
         private int maxCommitAttempts = DEFAULT_MAX_COMMIT_ATTEMPTS;
         private int transactionTimeoutSec = DEFAULT_TRANSACTION_TIMEOUT_SEC;
 
-        private jdbcConnectionOptionsBuilder() {
+        private JdbcConnectionOptionsBuilder() {
         }
 
-        public jdbcConnectionOptionsBuilder withUrl(String url) {
+        public JdbcConnectionOptionsBuilder withUrl(String url) {
             this.url = url;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withDriverName(String driverName) {
+        public JdbcConnectionOptionsBuilder withDriverName(String driverName) {
             this.driverName = driverName;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withConnectionCheckTimeoutSeconds(int connectionCheckTimeoutSeconds) {
+        public JdbcConnectionOptionsBuilder withConnectionCheckTimeoutSeconds(int connectionCheckTimeoutSeconds) {
             this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withMaxRetries(int maxRetries) {
+        public JdbcConnectionOptionsBuilder withMaxRetries(int maxRetries) {
             this.maxRetries = maxRetries;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withUsername(String username) {
+        public JdbcConnectionOptionsBuilder withUsername(String username) {
             this.username = username;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withPassword(String password) {
+        public JdbcConnectionOptionsBuilder withPassword(String password) {
             this.password = password;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withQuery(String query) {
+        public JdbcConnectionOptionsBuilder withQuery(String query) {
             this.query = query;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withBatchSize(int batchSize) {
+        public JdbcConnectionOptionsBuilder withBatchSize(int batchSize) {
             this.batchSize = batchSize;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withBatchIntervalMs(int batchIntervalMs) {
+        public JdbcConnectionOptionsBuilder withBatchIntervalMs(int batchIntervalMs) {
             this.batchIntervalMs = batchIntervalMs;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withXaDataSourceClassName(String xaDataSourceClassName) {
+        public JdbcConnectionOptionsBuilder withXaDataSourceClassName(String xaDataSourceClassName) {
             this.xaDataSourceClassName = xaDataSourceClassName;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withMaxCommitAttempts(int maxCommitAttempts) {
+        public JdbcConnectionOptionsBuilder withMaxCommitAttempts(int maxCommitAttempts) {
             this.maxCommitAttempts = maxCommitAttempts;
             return this;
         }
 
-        public jdbcConnectionOptionsBuilder withTransactionTimeoutSec(int transactionTimeoutSec) {
+        public JdbcConnectionOptionsBuilder withTransactionTimeoutSec(int transactionTimeoutSec) {
             this.transactionTimeoutSec = transactionTimeoutSec;
             return this;
         }

@@ -16,20 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect;
+package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.mysql;
 
-import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialect;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectFactory;
 
-import java.io.Serializable;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import com.google.auto.service.AutoService;
 
-/** Separate the jdbc meta-information type to SeaTunnelDataType into the interface. */
-public interface JdbcDialectTypeMapper extends Serializable {
+/** Factory for {@link MysqlDialect}. */
 
-    /**
-     * Convert ResultSetMetaData to Seatunnel data type {@link SeaTunnelDataType}.
-     */
-    SeaTunnelDataType<?> mapping(ResultSetMetaData metadata, int colIndex)
-        throws SQLException;
+@AutoService(JdbcDialectFactory.class)
+public class MySqlDialectFactory implements JdbcDialectFactory {
+    @Override
+    public boolean acceptsURL(String url) {
+        return url.startsWith("jdbc:mysql:");
+    }
+
+    @Override
+    public JdbcDialect create() {
+        return new MysqlDialect();
+    }
 }
