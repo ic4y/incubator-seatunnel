@@ -38,7 +38,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Optional;
 
 /**
  * InputFormat to read data from a database and generate Rows. The InputFormat has to be configured
@@ -54,6 +53,7 @@ public class JdbcInputFormat implements Serializable {
     protected JdbcConnectionProvider connectionProvider;
     protected JdbcRowConverter jdbcRowConverter;
     protected String queryTemplate;
+    protected Object[][] parameterValues;
     protected SeaTunnelRowTypeInfo typeInfo;
     protected int fetchSize;
     // Boolean to distinguish between default value and explicitly set autoCommit mode.
@@ -62,12 +62,12 @@ public class JdbcInputFormat implements Serializable {
     protected transient PreparedStatement statement;
     protected transient ResultSet resultSet;
 
-
     protected boolean hasNext;
 
     public JdbcInputFormat(JdbcConnectionProvider connectionProvider,
                            JdbcRowConverter jdbcRowConverter,
                            SeaTunnelRowTypeInfo typeInfo,
+                           Object[][] parameterValues,
                            String queryTemplate,
                            int fetchSize,
                            Boolean autoCommit
@@ -75,6 +75,7 @@ public class JdbcInputFormat implements Serializable {
         this.connectionProvider = connectionProvider;
         this.jdbcRowConverter = jdbcRowConverter;
         this.typeInfo = typeInfo;
+        this.parameterValues = parameterValues;
         this.queryTemplate = queryTemplate;
         this.fetchSize = fetchSize;
         this.autoCommit = autoCommit;
@@ -123,15 +124,16 @@ public class JdbcInputFormat implements Serializable {
      * Connects to the source database and executes the query
      *
      * @param inputSplit which is ignored if this InputFormat is executed as a non-parallel source,
-     *                   a "hook" to the query parameters otherwise (using its <i>splitNumber</i>)
+     *                   a "hook" to the query parameters otherwise (using its <i>parameterId</i>)
      * @throws IOException if there's an error during the execution of the query
      */
     public void open(JdbcSourceSplit inputSplit) throws IOException {
         try {
-            Optional<Object[]> parameterValue = inputSplit.getParameterValueOptional();
-            if (parameterValue.isPresent()) {
-                for (int i = 0; i < parameterValue.get().length; i++) {
-                    Object param = parameterValue.get()[i];
+            Integer parameterId = inputSplit.getParameterId();
+            if (parameterId != -1 && parameterValues != null) {
+                System.out.println("--->" + parameterId + "---" + parameterValues.length);
+                for (int i = 0; i < parameterValues[parameterId].length; i++) {
+                    Object param = parameterValues[parameterId][i];
                     if (param instanceof String) {
                         statement.setString(i + 1, (String) param);
                     } else if (param instanceof Long) {

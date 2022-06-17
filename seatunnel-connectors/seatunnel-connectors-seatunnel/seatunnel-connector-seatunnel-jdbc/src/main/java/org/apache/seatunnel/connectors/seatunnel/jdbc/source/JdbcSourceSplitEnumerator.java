@@ -17,22 +17,35 @@ public class JdbcSourceSplitEnumerator implements SourceSplitEnumerator<JdbcSour
     BlockingQueue<JdbcSourceSplit> splits = new LinkedBlockingQueue<>();
     BlockingQueue<Integer> registedReader = new LinkedBlockingQueue<>();
     SourceSplitEnumerator.Context<JdbcSourceSplit> enumeratorContext;
+    int parallelism = 0;
 
-    public JdbcSourceSplitEnumerator(Context<JdbcSourceSplit> enumeratorContext) {
+    public JdbcSourceSplitEnumerator(Context<JdbcSourceSplit> enumeratorContext, int parallelism) {
         this.enumeratorContext = enumeratorContext;
+        this.parallelism = parallelism;
     }
 
     @Override
     public void open() {
-        splits.add(new JdbcSourceSplit(Optional.empty()));
+        for (int i = 0; i < parallelism; i++) {
+            splits.add(new JdbcSourceSplit(i));
+        }
     }
 
     @Override
     public void run() throws Exception {
-        Integer taskId = registedReader.take();
-        JdbcSourceSplit split = splits.take();
-        enumeratorContext.assignSplit(taskId, split);
-        enumeratorContext.signalNoMoreSplits(taskId);
+        while (!splits.isEmpty()) {
+            for (Integer readerId : registedReader) {
+                JdbcSourceSplit split = splits.poll();
+                if (split == null) {
+                    break;
+                } else {
+                    enumeratorContext.assignSplit(readerId, split);
+                }
+            }
+        }
+        for (Integer rederId : registedReader) {
+            enumeratorContext.signalNoMoreSplits(rederId);
+        }
     }
 
     @Override

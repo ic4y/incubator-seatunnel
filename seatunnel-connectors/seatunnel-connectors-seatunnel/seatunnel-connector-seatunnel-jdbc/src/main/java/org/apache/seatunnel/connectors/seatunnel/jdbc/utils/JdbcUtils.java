@@ -171,7 +171,7 @@ public class JdbcUtils {
      */
     public static Tuple2<String, Set<String>> getTableNameAndFields(String selectSql) {
         Matcher matcher = COMPILE.matcher(selectSql);
-        String tableName;
+        String tableName = null;
         Set<String> fields = null;
         if (matcher.find()) {
             String var = matcher.group(1);
@@ -185,8 +185,27 @@ public class JdbcUtils {
                 fields = vars;
             }
             return new Tuple2<>(tableName, fields);
+        }
+        LOG.info(String.format("Failed to parse tableName, Fields from {}", selectSql));
+        return new Tuple2<>(tableName, fields);
+    }
+
+    /**
+     * Alter sql add BETWEEN  AND
+     */
+    public static String extendPartitionQuerySql(String query, String column) {
+        Matcher matcher = COMPILE.matcher(query);
+        if (matcher.find()) {
+            String where = matcher.group(Integer.parseInt("3"));
+            if (where != null && where.trim().toLowerCase().startsWith("where")) {
+                // contain where
+                return query + " AND \"" + column + "\" BETWEEN ? AND ?";
+            } else {
+                // not contain where
+                return query + " WHERE \"" + column + "\" BETWEEN ? AND ?";
+            }
         } else {
-            throw new IllegalArgumentException("can't find tableName and fields in sql :" + selectSql);
+            throw new IllegalArgumentException("sql statement format is incorrect :" + query);
         }
     }
 }
