@@ -23,6 +23,7 @@ import org.apache.seatunnel.api.table.type.PrimitiveArrayType;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
+import org.apache.seatunnel.api.table.type.TimestampType;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -50,7 +51,11 @@ public abstract class AbstractJdbcRowConverter implements JdbcRowConverter {
         for (int i = 1; i <= seaTunnelDataTypes.length; i++) {
             Object seatunnelField;
             SeaTunnelDataType<?> seaTunnelDataType = seaTunnelDataTypes[i - 1];
-            if (BasicType.BOOLEAN_TYPE.equals(seaTunnelDataType)) {
+            if (null == rs.getObject(i)) {
+                seatunnelField = null;
+            } else if (seaTunnelDataType instanceof TimestampType) {
+                seatunnelField = rs.getTimestamp(i);
+            } else if (BasicType.BOOLEAN_TYPE.equals(seaTunnelDataType)) {
                 seatunnelField = rs.getBoolean(i);
             } else if (BasicType.BYTE_TYPE.equals(seaTunnelDataType)) {
                 seatunnelField = rs.getByte(i);
