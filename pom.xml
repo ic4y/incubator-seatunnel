@@ -88,6 +88,7 @@
         <module>seatunnel-formats</module>
         <module>seatunnel-dist</module>
 	    <module>seatunnel-server</module>
+        <module>connector-dingtalk</module>
     </modules>
 
     <profiles>
