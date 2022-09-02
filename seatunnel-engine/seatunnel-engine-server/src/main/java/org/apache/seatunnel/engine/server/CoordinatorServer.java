@@ -20,9 +20,12 @@ package org.apache.seatunnel.engine.server;
 import org.apache.seatunnel.common.utils.ExceptionUtils;
 import org.apache.seatunnel.engine.common.utils.PassiveCompletableFuture;
 import org.apache.seatunnel.engine.core.job.JobStatus;
+import org.apache.seatunnel.engine.server.execution.ExecutionState;
 import org.apache.seatunnel.engine.server.master.JobMaster;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -122,6 +125,23 @@ public class CoordinatorServer {
             return JobStatus.FINISHED;
         }
         return runningJobMaster.getJobStatus();
+    }
+
+    public void memberRemoved(MembershipServiceEvent event) {
+        Address lostAddress = event.getMember().getAddress();
+        runningJobMasterMap.forEach((aLong, jobMaster) -> {
+            jobMaster.getPhysicalPlan().getPipelineList().forEach(subPlan -> {
+                subPlan.getPhysicalVertexList().forEach(physicalVertex -> {
+                    Address deployAddress = physicalVertex.getCurrentExecutionAddress();
+                    ExecutionState executionState = physicalVertex.getExecutionState().get();
+                    if (null != deployAddress && deployAddress.equals(lostAddress) &&
+                        (executionState.equals(ExecutionState.DEPLOYING) ||
+                            executionState.equals(ExecutionState.RUNNING))) {
+                        //TODO Task failed due to node lost
+                    }
+                });
+            });
+        });
     }
 
     public JobMaster getJobMaster(Long jobId) {

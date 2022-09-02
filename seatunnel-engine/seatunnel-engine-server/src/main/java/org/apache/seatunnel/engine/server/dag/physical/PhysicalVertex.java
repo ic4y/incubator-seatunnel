@@ -144,7 +144,8 @@ public class PhysicalVertex {
                 subTaskGroupIndex + 1,
                 parallelism);
         this.taskFuture = new CompletableFuture<>();
-        this.taskGroupLocation = new TaskGroupLocation(jobImmutableInformation.getJobId(), pipelineIndex, physicalVertexId);
+        this.taskGroupLocation =
+            new TaskGroupLocation(jobImmutableInformation.getJobId(), pipelineIndex, physicalVertexId);
     }
 
     public PassiveCompletableFuture<TaskExecutionState> initStateFuture() {
@@ -172,7 +173,8 @@ public class PhysicalVertex {
                 .invoke()));
     }
 
-    private void deployInternal(Function<TaskGroupImmutableInformation, PassiveCompletableFuture<TaskExecutionState>> deployMethod) {
+    private void deployInternal(
+        Function<TaskGroupImmutableInformation, PassiveCompletableFuture<TaskExecutionState>> deployMethod) {
         TaskGroupImmutableInformation taskGroupImmutableInformation = getTaskGroupImmutableInformation();
         PassiveCompletableFuture<TaskExecutionState> completeFuture;
         try {
@@ -220,8 +222,8 @@ public class PhysicalVertex {
 
     private TaskGroupImmutableInformation getTaskGroupImmutableInformation() {
         return new TaskGroupImmutableInformation(flakeIdGenerator.newId(),
-                nodeEngine.getSerializationService().toData(this.taskGroup),
-                this.pluginJarsUrls);
+            nodeEngine.getSerializationService().toData(this.taskGroup),
+            this.pluginJarsUrls);
     }
 
     /**
@@ -362,6 +364,10 @@ public class PhysicalVertex {
                 }
             }
         }
+    }
+
+    public Address getCurrentExecutionAddress() {
+        return currentExecutionAddress;
     }
 
     public AtomicReference<ExecutionState> getExecutionState() {
