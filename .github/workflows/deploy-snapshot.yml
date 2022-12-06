@@ -30,7 +30,7 @@ jobs:
       - name: Deploy
         shell: bash
         run: |
-          ./mvnw -B versions:set -DnewVersion=2.1.3-SNAPSHOT -DgenerateBackupPoms=false
+          ./mvnw -B versions:set -DnewVersion=2.3.1-SNAPSHOT -DgenerateBackupPoms=false
           ./mvnw --batch-mode --settings maven-settings.xml clean deploy \
                 -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/whaleops/incubator-seatunnel \
                 -Dmaven.test.skip -Dcheckstyle.skip -DretryFailedDeploymentCount=5
