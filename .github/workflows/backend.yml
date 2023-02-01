@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   license-header:
-    if: github.repository == 'ic4y/incubator-seatunnel'
+    if: github.repository == 'apache/incubator-seatunnel'
     name: License header
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -82,7 +82,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     # To prevent error when there's no base branch
-    if: github.repository == 'apache/incubator-seatunnel'
+    if: github.repository == 'ic4y/incubator-seatunnel'
     timeout-minutes: 10
     outputs:
       api: ${{ steps.filter.outputs.api }}
