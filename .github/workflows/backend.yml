@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   license-header:
-    if: github.repository == 'apache/incubator-seatunnel'
+    if: github.repository == 'ic4y/incubator-seatunnel'
     name: License header
     runs-on: ubuntu-latest
     timeout-minutes: 10
