@@ -76,14 +76,16 @@ public class PostgresDialect implements JdbcDataSourceDialect {
 
         RelationalDatabaseConnectorConfig dbzConnectorConfig = sourceConfig.getDbzConnectorConfig();
 
-        PostgresConnection heartbeatConnection = new PostgresConnection(dbzConnectorConfig.getJdbcConfig());
+        PostgresConnection heartbeatConnection =
+                new PostgresConnection(dbzConnectorConfig.getJdbcConfig());
         final Charset databaseCharset = heartbeatConnection.getDatabaseCharset();
 
-        final PostgresConnection.PostgresValueConverterBuilder
-            valueConverterBuilder = (typeRegistry) -> PostgresValueConverter.of(
-            (PostgresConnectorConfig) dbzConnectorConfig,
-            databaseCharset,
-            typeRegistry);
+        final PostgresConnection.PostgresValueConverterBuilder valueConverterBuilder =
+                (typeRegistry) ->
+                        PostgresValueConverter.of(
+                                (PostgresConnectorConfig) dbzConnectorConfig,
+                                databaseCharset,
+                                typeRegistry);
 
         return new PostgresConnection(dbzConnectorConfig.getJdbcConfig(), valueConverterBuilder);
     }
@@ -121,17 +123,19 @@ public class PostgresDialect implements JdbcDataSourceDialect {
     public PostgresSourceFetchTaskContext createFetchTaskContext(
             SourceSplitBase sourceSplitBase, JdbcSourceConfig taskSourceConfig) {
 
-        RelationalDatabaseConnectorConfig dbzConnectorConfig = taskSourceConfig.getDbzConnectorConfig();
+        RelationalDatabaseConnectorConfig dbzConnectorConfig =
+                taskSourceConfig.getDbzConnectorConfig();
 
-        PostgresConnection heartbeatConnection = new PostgresConnection(dbzConnectorConfig.getJdbcConfig());
+        PostgresConnection heartbeatConnection =
+                new PostgresConnection(dbzConnectorConfig.getJdbcConfig());
         final Charset databaseCharset = heartbeatConnection.getDatabaseCharset();
 
-        final PostgresConnection.PostgresValueConverterBuilder
-            valueConverterBuilder = (typeRegistry) -> PostgresValueConverter.of(
-            (PostgresConnectorConfig) dbzConnectorConfig,
-            databaseCharset,
-            typeRegistry);
-
+        final PostgresConnection.PostgresValueConverterBuilder valueConverterBuilder =
+                (typeRegistry) ->
+                        PostgresValueConverter.of(
+                                (PostgresConnectorConfig) dbzConnectorConfig,
+                                databaseCharset,
+                                typeRegistry);
 
         final PostgresConnection jdbcConnection =
                 new PostgresConnection(dbzConnectorConfig.getJdbcConfig(), valueConverterBuilder);

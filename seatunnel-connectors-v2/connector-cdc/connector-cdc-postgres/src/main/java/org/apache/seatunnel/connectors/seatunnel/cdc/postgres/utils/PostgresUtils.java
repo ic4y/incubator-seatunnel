@@ -52,7 +52,7 @@ public class PostgresUtils {
         final String minMaxQuery =
                 String.format(
                         "SELECT MIN(%s), MAX(%s) FROM %s",
-                    quote(columnName), quote(columnName), quote(tableId));
+                        quote(columnName), quote(columnName), quote(tableId));
         return jdbc.queryAndMap(
                 minMaxQuery,
                 rs -> {
@@ -355,7 +355,7 @@ public class PostgresUtils {
     }
 
     public static String quote(TableId tableId) {
-        return "\""+ tableId.schema() + "\".\"" + tableId.table() + "\"";
+        return "\"" + tableId.schema() + "\".\"" + tableId.table() + "\"";
     }
 
     private static void addPrimaryKeyColumnsToCondition(

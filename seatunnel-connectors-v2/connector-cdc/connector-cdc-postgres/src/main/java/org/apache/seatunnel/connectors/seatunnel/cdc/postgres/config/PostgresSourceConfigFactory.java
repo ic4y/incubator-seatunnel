@@ -26,6 +26,7 @@ import io.debezium.connector.postgresql.PostgresConnector;
 
 import java.util.Properties;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -72,7 +73,12 @@ public class PostgresSourceConfigFactory extends JdbcSourceConfigFactory {
         props.setProperty("database.history.refer.ddl", String.valueOf(true));
 
         if (tableList != null) {
-            props.setProperty("table.include.list", String.join(",", tableList));
+            // SqlServer identifier is of the form schemaName.tableName
+            String tableIncludeList =
+                    tableList.stream()
+                            .map(table -> table.substring(table.indexOf(".") + 1))
+                            .collect(Collectors.joining(","));
+            props.setProperty("table.include.list", tableIncludeList);
         }
 
         if (dbzProperties != null) {

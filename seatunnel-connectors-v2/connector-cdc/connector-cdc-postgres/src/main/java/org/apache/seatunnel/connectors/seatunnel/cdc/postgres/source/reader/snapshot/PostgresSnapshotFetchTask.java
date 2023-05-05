@@ -24,10 +24,7 @@ import org.apache.seatunnel.connectors.cdc.base.source.split.SnapshotSplit;
 import org.apache.seatunnel.connectors.cdc.base.source.split.SourceSplitBase;
 import org.apache.seatunnel.connectors.cdc.base.source.split.wartermark.WatermarkKind;
 import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.source.reader.PostgresSourceFetchTaskContext;
-import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.source.reader.wal.PostgresWalFetchTask;
 
-import io.debezium.config.Configuration;
-import io.debezium.heartbeat.Heartbeat;
 import io.debezium.pipeline.spi.SnapshotResult;
 
 import java.util.ArrayList;
@@ -62,47 +59,47 @@ public class PostgresSnapshotFetchTask implements FetchTask<SourceSplitBase> {
                         split);
         SnapshotSplitChangeEventSourceContext changeEventSourceContext =
                 new SnapshotSplitChangeEventSourceContext();
-        SnapshotResult snapshotResult = snapshotSplitReadTask.execute(
-                changeEventSourceContext, sourceFetchContext.getOffsetContext());
+        SnapshotResult snapshotResult =
+                snapshotSplitReadTask.execute(
+                        changeEventSourceContext, sourceFetchContext.getOffsetContext());
 
         final IncrementalSplit backfillBinlogSplit =
-            createBackFillWalSplit(changeEventSourceContext);
+                createBackFillWalSplit(changeEventSourceContext);
 
         // optimization that skip the binlog read when the low watermark equals high
         // watermark
         final boolean binlogBackfillRequired =
-            backfillBinlogSplit.getStopOffset().isAfter(backfillBinlogSplit.getStartupOffset());
+                backfillBinlogSplit.getStopOffset().isAfter(backfillBinlogSplit.getStartupOffset());
         if (true) {
             dispatchBinlogEndEvent(
-                backfillBinlogSplit,
-                ((PostgresSourceFetchTaskContext) context).getOffsetContext().getPartition(),
-                ((PostgresSourceFetchTaskContext) context).getDispatcher());
+                    backfillBinlogSplit,
+                    ((PostgresSourceFetchTaskContext) context).getOffsetContext().getPartition(),
+                    ((PostgresSourceFetchTaskContext) context).getDispatcher());
             taskRunning = false;
             return;
         }
     }
 
     private IncrementalSplit createBackFillWalSplit(
-        SnapshotSplitChangeEventSourceContext sourceContext) {
+            SnapshotSplitChangeEventSourceContext sourceContext) {
         return new IncrementalSplit(
-            split.splitId(),
-            Collections.singletonList(split.getTableId()),
-            sourceContext.getLowWatermark(),
-            sourceContext.getHighWatermark(),
-            new ArrayList<>());
+                split.splitId(),
+                Collections.singletonList(split.getTableId()),
+                sourceContext.getLowWatermark(),
+                sourceContext.getHighWatermark(),
+                new ArrayList<>());
     }
 
-
     private void dispatchBinlogEndEvent(
-        IncrementalSplit backFillBinlogSplit,
-        Map<String, ?> sourcePartition,
-        JdbcSourceEventDispatcher eventDispatcher)
-        throws InterruptedException {
+            IncrementalSplit backFillBinlogSplit,
+            Map<String, ?> sourcePartition,
+            JdbcSourceEventDispatcher eventDispatcher)
+            throws InterruptedException {
         eventDispatcher.dispatchWatermarkEvent(
-            sourcePartition,
-            backFillBinlogSplit,
-            backFillBinlogSplit.getStopOffset(),
-            WatermarkKind.END);
+                sourcePartition,
+                backFillBinlogSplit,
+                backFillBinlogSplit.getStopOffset(),
+                WatermarkKind.END);
     }
 
     @Override

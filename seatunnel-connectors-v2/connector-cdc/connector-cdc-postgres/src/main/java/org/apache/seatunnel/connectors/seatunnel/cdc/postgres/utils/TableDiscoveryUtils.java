@@ -17,7 +17,6 @@
 
 package org.apache.seatunnel.connectors.seatunnel.cdc.postgres.utils;
 
-import io.debezium.relational.Tables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

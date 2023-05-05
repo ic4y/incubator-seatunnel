@@ -69,7 +69,6 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -110,11 +109,6 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
 
     @Override
     public void configure(SourceSplitBase sourceSplitBase) {
-//        EmbeddedDatabaseHistory.registerHistory(
-//                sourceConfig
-//                        .getDbzConfiguration()
-//                        .getString(EmbeddedDatabaseHistory.DATABASE_HISTORY_INSTANCE_NAME),
-//                engineHistory);
         registerDatabaseHistory(sourceSplitBase);
 
         // initial stateful objects
@@ -137,7 +131,7 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
                         valueConverterBuilder.build(typeRegistry));
         this.taskContext = new PostgresTaskContext(connectorConfig, databaseSchema, topicSelector);
         try {
-            taskContext.refreshSchema(dataConnection,false);
+            taskContext.refreshSchema(dataConnection, false);
         } catch (SQLException e) {
             throw new DebeziumException("load schema failed", e);
         }
@@ -252,7 +246,7 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
         if (sourceSplitBase instanceof SnapshotSplit) {
             SnapshotSplit snapshotSplit = (SnapshotSplit) sourceSplitBase;
             engineHistory.add(
-                dataSourceDialect.queryTableSchema(dataConnection, snapshotSplit.getTableId()));
+                    dataSourceDialect.queryTableSchema(dataConnection, snapshotSplit.getTableId()));
         } else {
             IncrementalSplit incrementalSplit = (IncrementalSplit) sourceSplitBase;
             for (TableId tableId : incrementalSplit.getTableIds()) {
@@ -261,10 +255,10 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
         }
 
         EmbeddedDatabaseHistory.registerHistory(
-            sourceConfig
-                .getDbzConfiguration()
-                .getString(EmbeddedDatabaseHistory.DATABASE_HISTORY_INSTANCE_NAME),
-            engineHistory);
+                sourceConfig
+                        .getDbzConfiguration()
+                        .getString(EmbeddedDatabaseHistory.DATABASE_HISTORY_INSTANCE_NAME),
+                engineHistory);
     }
 
     @Override
