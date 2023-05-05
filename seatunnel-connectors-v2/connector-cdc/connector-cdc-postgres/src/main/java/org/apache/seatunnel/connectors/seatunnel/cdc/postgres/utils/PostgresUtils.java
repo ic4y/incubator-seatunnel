@@ -52,7 +52,7 @@ public class PostgresUtils {
         final String minMaxQuery =
                 String.format(
                         "SELECT MIN(%s), MAX(%s) FROM %s",
-                        quote(columnName), quote(columnName), quote(tableId));
+                    quote(columnName), quote(columnName), quote(tableId));
         return jdbc.queryAndMap(
                 minMaxQuery,
                 rs -> {
@@ -71,12 +71,10 @@ public class PostgresUtils {
             throws SQLException {
         // The statement used to get approximate row count which is less
         // accurate than COUNT(*), but is more efficient for large table.
-        final String useDatabaseStatement = String.format("USE %s;", quote(tableId.catalog()));
         final String rowCountQuery =
                 String.format(
                         "SELECT reltuples FROM pg_class r WHERE relkind = 'r' AND relname = '%s';",
                         tableId.table());
-        jdbc.executeWithoutCommitting(useDatabaseStatement);
         return jdbc.queryAndMap(
                 rowCountQuery,
                 rs -> {
@@ -353,11 +351,11 @@ public class PostgresUtils {
     }
 
     public static String quote(String dbOrTableName) {
-        return "[" + dbOrTableName + "]";
+        return "\"" + dbOrTableName + "\"";
     }
 
     public static String quote(TableId tableId) {
-        return "[" + tableId.schema() + "].[" + tableId.table() + "]";
+        return "\""+ tableId.schema() + "\".\"" + tableId.table() + "\"";
     }
 
     private static void addPrimaryKeyColumnsToCondition(

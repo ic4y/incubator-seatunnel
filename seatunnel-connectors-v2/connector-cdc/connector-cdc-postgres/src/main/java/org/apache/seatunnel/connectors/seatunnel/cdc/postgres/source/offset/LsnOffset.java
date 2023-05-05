@@ -59,7 +59,7 @@ public class LsnOffset extends Offset {
         Map<String, String> offsetMap = new HashMap<>();
 
         if (lsn != null && lsn.isValid()) {
-            offsetMap.put(SourceInfo.LSN_KEY, String.valueOf(lsn.asString()));
+            offsetMap.put(SourceInfo.LSN_KEY, String.valueOf(lsn.asLong()));
         }
         if (txId != null) {
             offsetMap.put(SourceInfo.TXID_KEY, String.valueOf(txId));
@@ -72,7 +72,7 @@ public class LsnOffset extends Offset {
     }
 
     public Lsn getLsn() {
-        return Lsn.valueOf(offset.get(SourceInfo.LSN_KEY));
+        return Lsn.valueOf(Long.valueOf(offset.get(SourceInfo.LSN_KEY)));
     }
 
     public Long getTxId() {
@@ -100,7 +100,7 @@ public class LsnOffset extends Offset {
         Lsn thatLsn = that.getLsn();
         if (thatLsn.isValid()) {
             if (thisLsn.isValid()) {
-                return thatLsn.compareTo(thisLsn);
+                return thisLsn.compareTo(thatLsn);
             }
             return -1;
         } else if (thisLsn.isValid()) {

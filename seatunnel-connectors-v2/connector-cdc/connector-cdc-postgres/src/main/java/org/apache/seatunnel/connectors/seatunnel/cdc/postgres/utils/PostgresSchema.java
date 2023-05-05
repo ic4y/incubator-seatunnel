@@ -18,7 +18,9 @@
 package org.apache.seatunnel.connectors.seatunnel.cdc.postgres.utils;
 
 import org.apache.seatunnel.common.utils.SeaTunnelException;
+import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.config.PostgresSourceConfig;
 
+import io.debezium.connector.postgresql.PostgresConnectorConfig;
 import io.debezium.connector.postgresql.connection.PostgresConnection;
 import io.debezium.jdbc.JdbcConnection;
 import io.debezium.relational.Table;
@@ -36,7 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PostgresSchema {
 
     private final Map<TableId, TableChanges.TableChange> schemasByTableId;
-
     public PostgresSchema() {
         this.schemasByTableId = new ConcurrentHashMap<>();
     }
@@ -52,7 +53,11 @@ public class PostgresSchema {
     }
 
     private TableChanges.TableChange readTableSchema(JdbcConnection jdbc, TableId tableId) {
-        PostgresConnection sqlServerConnection = (PostgresConnection) jdbc;
+
+        //因为postgresConnection.readSchema方法中，中的catalog为null。
+        tableId = new TableId(null, tableId.schema(), tableId.table());
+
+        PostgresConnection postgresConnection = (PostgresConnection) jdbc;
         Set<TableId> tableIdSet = new HashSet<>();
         tableIdSet.add(tableId);
 
@@ -61,7 +66,7 @@ public class PostgresSchema {
         tables.overwriteTable(tables.editOrCreateTable(tableId).create());
 
         try {
-            sqlServerConnection.readSchema(
+            postgresConnection.readSchema(
                     tables, tableId.catalog(), tableId.schema(), null, null, false);
             Table table = tables.forTable(tableId);
             TableChanges.TableChange tableChange =

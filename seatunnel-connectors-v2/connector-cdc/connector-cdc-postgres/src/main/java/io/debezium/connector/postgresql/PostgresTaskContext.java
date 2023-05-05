@@ -77,7 +77,7 @@ public class PostgresTaskContext extends CdcSourceTaskContext {
         return config;
     }
 
-    protected void refreshSchema(PostgresConnection connection, boolean printReplicaIdentityInfo)
+    public void refreshSchema(PostgresConnection connection, boolean printReplicaIdentityInfo)
             throws SQLException {
         schema.refresh(connection, printReplicaIdentityInfo);
     }

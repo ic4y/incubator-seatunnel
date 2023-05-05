@@ -63,7 +63,7 @@ public class LsnOffsetFactory extends OffsetFactory {
 
     @Override
     public Offset specific(Map<String, String> offset) {
-        return new LsnOffset(Lsn.valueOf(offset.get(SourceInfo.LSN_KEY)));
+        return new LsnOffset(Lsn.valueOf(Long.valueOf(offset.get(SourceInfo.LSN_KEY))));
     }
 
     @Override

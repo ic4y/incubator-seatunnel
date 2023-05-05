@@ -23,6 +23,8 @@ import org.apache.seatunnel.connectors.cdc.base.dialect.JdbcDataSourceDialect;
 import org.apache.seatunnel.connectors.cdc.base.relational.JdbcSourceEventDispatcher;
 import org.apache.seatunnel.connectors.cdc.base.source.offset.Offset;
 import org.apache.seatunnel.connectors.cdc.base.source.reader.external.JdbcSourceFetchTaskContext;
+import org.apache.seatunnel.connectors.cdc.base.source.split.IncrementalSplit;
+import org.apache.seatunnel.connectors.cdc.base.source.split.SnapshotSplit;
 import org.apache.seatunnel.connectors.cdc.base.source.split.SourceSplitBase;
 import org.apache.seatunnel.connectors.cdc.debezium.EmbeddedDatabaseHistory;
 import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.config.PostgresSourceConfig;
@@ -65,7 +67,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
 @Slf4j
 public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
@@ -105,11 +110,12 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
 
     @Override
     public void configure(SourceSplitBase sourceSplitBase) {
-        EmbeddedDatabaseHistory.registerHistory(
-                sourceConfig
-                        .getDbzConfiguration()
-                        .getString(EmbeddedDatabaseHistory.DATABASE_HISTORY_INSTANCE_NAME),
-                engineHistory);
+//        EmbeddedDatabaseHistory.registerHistory(
+//                sourceConfig
+//                        .getDbzConfiguration()
+//                        .getString(EmbeddedDatabaseHistory.DATABASE_HISTORY_INSTANCE_NAME),
+//                engineHistory);
+        registerDatabaseHistory(sourceSplitBase);
 
         // initial stateful objects
         final PostgresConnectorConfig connectorConfig = getDbzConnectorConfig();
@@ -130,6 +136,11 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
                         topicSelector,
                         valueConverterBuilder.build(typeRegistry));
         this.taskContext = new PostgresTaskContext(connectorConfig, databaseSchema, topicSelector);
+        try {
+            taskContext.refreshSchema(dataConnection,false);
+        } catch (SQLException e) {
+            throw new DebeziumException("load schema failed", e);
+        }
         this.offsetContext =
                 loadStartingOffsetState(
                         new PostgresOffsetContext.Loader(connectorConfig), sourceSplitBase);
@@ -235,6 +246,27 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
         }
     }
 
+    private void registerDatabaseHistory(SourceSplitBase sourceSplitBase) {
+        List<TableChanges.TableChange> engineHistory = new ArrayList<>();
+        // TODO: support save table schema
+        if (sourceSplitBase instanceof SnapshotSplit) {
+            SnapshotSplit snapshotSplit = (SnapshotSplit) sourceSplitBase;
+            engineHistory.add(
+                dataSourceDialect.queryTableSchema(dataConnection, snapshotSplit.getTableId()));
+        } else {
+            IncrementalSplit incrementalSplit = (IncrementalSplit) sourceSplitBase;
+            for (TableId tableId : incrementalSplit.getTableIds()) {
+                engineHistory.add(dataSourceDialect.queryTableSchema(dataConnection, tableId));
+            }
+        }
+
+        EmbeddedDatabaseHistory.registerHistory(
+            sourceConfig
+                .getDbzConfiguration()
+                .getString(EmbeddedDatabaseHistory.DATABASE_HISTORY_INSTANCE_NAME),
+            engineHistory);
+    }
+
     @Override
     public PostgresSourceConfig getSourceConfig() {
         return (PostgresSourceConfig) sourceConfig;
@@ -291,6 +323,16 @@ public class PostgresSourceFetchTaskContext extends JdbcSourceFetchTaskContext {
     @Override
     public Offset getStreamOffset(SourceRecord sourceRecord) {
         return PostgresUtils.getLsnPosition(sourceRecord);
+    }
+
+    @Override
+    public void close() {
+        try {
+            this.dataConnection.close();
+            this.replicationConnection.close();
+        } catch (Exception e) {
+            log.warn("Failed to close connection", e);
+        }
     }
 
     /** Loads the connector's persistent offset (if present) via the given loader. */

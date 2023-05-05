@@ -19,11 +19,13 @@ package org.apache.seatunnel.connectors.seatunnel.cdc.postgres.config;
 
 import org.apache.seatunnel.api.configuration.ReadonlyConfig;
 import org.apache.seatunnel.connectors.cdc.base.config.JdbcSourceConfigFactory;
+import org.apache.seatunnel.connectors.cdc.debezium.EmbeddedDatabaseHistory;
 import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.option.PostgresOptions;
 
 import io.debezium.connector.postgresql.PostgresConnector;
 
 import java.util.Properties;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -63,9 +65,12 @@ public class PostgresSourceConfigFactory extends JdbcSourceConfigFactory {
         props.setProperty("plugin.name", decodingPluginName);
         props.setProperty("slot.name", slotName);
 
-        if (databaseList != null) {
-            props.setProperty("schema.include.list", String.join(",", databaseList));
-        }
+        // database history
+        props.setProperty("database.history", EmbeddedDatabaseHistory.class.getCanonicalName());
+        props.setProperty("database.history.instance.name", UUID.randomUUID() + "_" + subtask);
+        props.setProperty("database.history.skip.unparseable.ddl", String.valueOf(true));
+        props.setProperty("database.history.refer.ddl", String.valueOf(true));
+
         if (tableList != null) {
             props.setProperty("table.include.list", String.join(",", tableList));
         }
@@ -88,6 +93,7 @@ public class PostgresSourceConfigFactory extends JdbcSourceConfigFactory {
                 port,
                 username,
                 password,
+                originUrl,
                 fetchSize,
                 serverTimeZone,
                 connectTimeoutMillis,

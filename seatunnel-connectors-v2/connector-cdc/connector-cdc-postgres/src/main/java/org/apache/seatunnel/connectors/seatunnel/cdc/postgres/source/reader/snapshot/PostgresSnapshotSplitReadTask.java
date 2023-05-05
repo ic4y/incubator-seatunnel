@@ -161,8 +161,10 @@ public class PostgresSnapshotSplitReadTask extends AbstractSnapshotChangeEventSo
         EventDispatcher.SnapshotReceiver snapshotReceiver =
                 dispatcher.getSnapshotChangeEventReceiver();
         log.debug("Snapshotting table {}", tableId);
+        // todo pg 的 schema 不包含database
+        TableId newTableId = new TableId(null, tableId.schema(), tableId.table());
         createDataEventsForTable(
-                snapshotContext, snapshotReceiver, databaseSchema.tableFor(tableId));
+                snapshotContext, snapshotReceiver, databaseSchema.tableFor(newTableId));
         snapshotReceiver.completeSnapshot();
     }
 

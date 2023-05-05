@@ -17,13 +17,17 @@
 
 package org.apache.seatunnel.connectors.seatunnel.cdc.postgres.source;
 
+import org.apache.seatunnel.api.configuration.Option;
 import org.apache.seatunnel.api.configuration.ReadonlyConfig;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
+import org.apache.seatunnel.common.utils.JdbcUrlUtil;
 import org.apache.seatunnel.connectors.cdc.base.config.JdbcSourceConfig;
 import org.apache.seatunnel.connectors.cdc.base.config.SourceConfig;
 import org.apache.seatunnel.connectors.cdc.base.dialect.DataSourceDialect;
 import org.apache.seatunnel.connectors.cdc.base.option.JdbcSourceOptions;
+import org.apache.seatunnel.connectors.cdc.base.option.StartupMode;
+import org.apache.seatunnel.connectors.cdc.base.option.StopMode;
 import org.apache.seatunnel.connectors.cdc.base.source.IncrementalSource;
 import org.apache.seatunnel.connectors.cdc.base.source.offset.OffsetFactory;
 import org.apache.seatunnel.connectors.cdc.debezium.DebeziumDeserializationSchema;
@@ -32,13 +36,16 @@ import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.config.PostgresSou
 import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.config.PostgresSourceConfigFactory;
 import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.source.offset.LsnOffsetFactory;
 import org.apache.seatunnel.connectors.seatunnel.cdc.postgres.utils.PostgresTypeUtils;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.JdbcCatalogOptions;
 
 import com.google.auto.service.AutoService;
 import io.debezium.connector.postgresql.PostgresConnectorConfig;
+import io.debezium.connector.postgresql.PostgresValueConverter;
 import io.debezium.connector.postgresql.connection.PostgresConnection;
 import io.debezium.relational.Table;
 import io.debezium.relational.TableId;
 
+import java.nio.charset.Charset;
 import java.time.ZoneId;
 
 @AutoService(SeaTunnelSource.class)
@@ -52,10 +59,26 @@ public class PostgresIncrementalSource<T> extends IncrementalSource<T, JdbcSourc
     }
 
     @Override
+    public Option<StartupMode> getStartupModeOption() {
+        return PostgresSourceOptions.STARTUP_MODE;
+    }
+
+    @Override
+    public Option<StopMode> getStopModeOption() {
+        return PostgresSourceOptions.STOP_MODE;
+    }
+
+    @Override
     public SourceConfig.Factory<JdbcSourceConfig> createSourceConfigFactory(ReadonlyConfig config) {
         PostgresSourceConfigFactory configFactory = new PostgresSourceConfigFactory();
         configFactory.fromReadonlyConfig(readonlyConfig);
         configFactory.startupOptions(startupConfig);
+        JdbcUrlUtil.UrlInfo urlInfo =
+            JdbcUrlUtil.getUrlInfo(config.get(JdbcCatalogOptions.BASE_URL));
+        configFactory.originUrl(urlInfo.getOrigin());
+        configFactory.hostname(urlInfo.getHost());
+        configFactory.port(urlInfo.getPort());
+        configFactory.databaseList("st_test");
         configFactory.stopOptions(stopConfig);
         return configFactory;
     }
@@ -71,8 +94,18 @@ public class PostgresIncrementalSource<T> extends IncrementalSource<T, JdbcSourc
 
         PostgresConnectorConfig dbzConnectorConfig = postgresSourceConfig.getDbzConnectorConfig();
 
+        PostgresConnection heartbeatConnection = new PostgresConnection(dbzConnectorConfig.getJdbcConfig());
+        final Charset databaseCharset = heartbeatConnection.getDatabaseCharset();
+
+        final PostgresConnection.PostgresValueConverterBuilder
+            valueConverterBuilder = (typeRegistry) -> PostgresValueConverter.of(
+            dbzConnectorConfig,
+            databaseCharset,
+            typeRegistry);
+
+
         PostgresConnection postgresConnection =
-                new PostgresConnection(dbzConnectorConfig.getJdbcConfig());
+                new PostgresConnection(dbzConnectorConfig.getJdbcConfig(), valueConverterBuilder);
 
         Table table =
                 ((PostgresDialect) dataSourceDialect)

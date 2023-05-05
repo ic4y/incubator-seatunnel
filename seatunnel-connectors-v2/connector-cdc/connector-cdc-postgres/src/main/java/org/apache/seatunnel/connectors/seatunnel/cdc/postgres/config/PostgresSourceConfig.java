@@ -22,6 +22,7 @@ import org.apache.seatunnel.connectors.cdc.base.config.StartupConfig;
 import org.apache.seatunnel.connectors.cdc.base.config.StopConfig;
 
 import io.debezium.connector.postgresql.PostgresConnectorConfig;
+import io.debezium.relational.RelationalTableFilters;
 
 import java.util.List;
 import java.util.Properties;
@@ -43,6 +44,7 @@ public class PostgresSourceConfig extends JdbcSourceConfig {
             int port,
             String username,
             String password,
+            String originUrl,
             int fetchSize,
             String serverTimeZone,
             long connectTimeoutMillis,
@@ -62,6 +64,7 @@ public class PostgresSourceConfig extends JdbcSourceConfig {
                 port,
                 username,
                 password,
+                originUrl,
                 fetchSize,
                 serverTimeZone,
                 connectTimeoutMillis,
@@ -72,5 +75,9 @@ public class PostgresSourceConfig extends JdbcSourceConfig {
     @Override
     public PostgresConnectorConfig getDbzConnectorConfig() {
         return new PostgresConnectorConfig(getDbzConfiguration());
+    }
+
+    public RelationalTableFilters getTableFilters() {
+        return getDbzConnectorConfig().getTableFilters();
     }
 }

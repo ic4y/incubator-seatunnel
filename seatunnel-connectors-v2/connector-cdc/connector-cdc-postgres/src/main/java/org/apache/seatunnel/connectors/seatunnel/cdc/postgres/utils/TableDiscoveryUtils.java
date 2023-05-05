@@ -17,6 +17,7 @@
 
 package org.apache.seatunnel.connectors.seatunnel.cdc.postgres.utils;
 
+import io.debezium.relational.Tables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class TableDiscoveryUtils {
         final List<String> databaseNames = new ArrayList<>();
 
         jdbc.query(
-                "SELECT name, database_id, create_date  \n" + "FROM sys.databases;  ",
+                "select datname from pg_database",
                 rs -> {
                     while (rs.next()) {
                         databaseNames.add(rs.getString(1));
