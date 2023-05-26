@@ -105,6 +105,10 @@ public class JdbcOutputFormatBuilder {
             SeaTunnelRowType rowType,
             String[] pkNames,
             boolean supportUpsertByQueryPrimaryKeyExist) {
+        log.info(
+                "Upsert mode is enabled, primary keys: {}, SeaTunnelRowType: {}",
+                Arrays.toString(pkNames),
+                rowType);
         int[] pkFields = Arrays.stream(pkNames).mapToInt(rowType::indexOf).toArray();
         SeaTunnelDataType[] pkTypes =
                 Arrays.stream(pkFields)
