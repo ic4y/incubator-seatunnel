@@ -39,10 +39,13 @@ import io.debezium.relational.Table;
 import io.debezium.relational.TableId;
 import io.debezium.schema.TopicSelector;
 import io.debezium.util.SchemaNameAdjuster;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /** The utils for SqlServer data source. */
+@Slf4j
 public class SqlServerUtils {
 
     public SqlServerUtils() {}
@@ -143,6 +147,52 @@ public class SqlServerUtils {
                     }
                     return results.toArray();
                 });
+    }
+
+    public static Object[] skipReadAndSortSampleData(
+            JdbcConnection jdbc, TableId tableId, String columnName, int inverseSamplingRate)
+            throws SQLException {
+        final String sampleQuery =
+                String.format("SELECT %s FROM %s", quote(columnName), quote(tableId));
+
+        Statement stmt =
+                jdbc.connection()
+                        .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
+        stmt.setFetchSize(Integer.MIN_VALUE);
+
+        long startTime = System.currentTimeMillis();
+
+        ResultSet rs = stmt.executeQuery(sampleQuery);
+
+        log.info("Sample data query completed in {} ms.", System.currentTimeMillis() - startTime);
+
+        List<Object> results = new ArrayList<>();
+
+        startTime = System.currentTimeMillis();
+
+        int count = 0;
+        while (rs.next()) {
+            count++;
+            if (count % 100000 == 0) {
+                log.info("Processing row index: {}", count);
+            }
+            if (count % inverseSamplingRate == 0) {
+                results.add(rs.getObject(1));
+            }
+        }
+
+        log.info(
+                "Sample data processing completed in {} ms.",
+                System.currentTimeMillis() - startTime);
+
+        Object[] resultsArray = results.toArray();
+
+        startTime = System.currentTimeMillis();
+        Arrays.sort(resultsArray);
+        log.info("Sample data sorting completed in {} ms.", System.currentTimeMillis() - startTime);
+
+        return resultsArray;
     }
 
     /**
