@@ -41,7 +41,8 @@ public class JobStatusRunner implements Runnable {
             while (isPrint(jobClient.getJobStatus(jobId))) {
                 Thread.sleep(5000);
             }
-        } catch (InterruptedException ignore) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             log.info("Failed to get job runner status. {}", ExceptionUtils.getMessage(e));
         }
