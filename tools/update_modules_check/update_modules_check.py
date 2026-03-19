@@ -143,18 +143,23 @@ def get_deleted_modules(files):
 
 def get_sub_it_modules(modules, total_num, current_num):
     modules_arr = list(dict.fromkeys(modules.split(",")))
-    modules_arr.remove("connector-jdbc-e2e")
-    modules_arr.remove("connector-kafka-e2e")
-    modules_arr.remove("connector-rocketmq-e2e")
-    modules_arr.remove("connector-kudu-e2e")
-    modules_arr.remove("connector-amazonsqs-e2e")
-    modules_arr.remove("connector-doris-e2e")
-    modules_arr.remove("connector-paimon-e2e")
-    modules_arr.remove("connector-cdc-oracle-e2e")
-    modules_arr.remove("connector-file-local-e2e")
-    modules_arr.remove("connector-file-sftp-e2e")
-    modules_arr.remove("connector-redis-e2e")
-    modules_arr.remove("connector-sensorsdata-e2e")
+    dedicated_modules = [
+        "connector-jdbc-e2e",
+        "connector-kafka-e2e",
+        "connector-rocketmq-e2e",
+        "connector-kudu-e2e",
+        "connector-amazonsqs-e2e",
+        "connector-doris-e2e",
+        "connector-paimon-e2e",
+        "connector-cdc-oracle-e2e",
+        "connector-file-local-e2e",
+        "connector-file-sftp-e2e",
+        "connector-redis-e2e",
+        "connector-sensorsdata-e2e",
+    ]
+    for m in dedicated_modules:
+        if m in modules_arr:
+            modules_arr.remove(m)
     if "connector-seatunnel-e2e-base" in modules_arr:
         modules_arr.remove("connector-seatunnel-e2e-base")
     if "connector-console-seatunnel-e2e" in modules_arr:
