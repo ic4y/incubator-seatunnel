@@ -261,6 +261,43 @@ public class OggJsonSerDeSchemaTest {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testFilteringTableWithoutDot() throws Exception {
+        OggJsonDeserializationSchema deserializationSchema =
+                new OggJsonDeserializationSchema.Builder(catalogTables)
+                        .setDatabase("OGGATE")
+                        .setTable("TBL1")
+                        .setIgnoreParseErrors(false)
+                        .build();
+        SimpleCollector collector = new SimpleCollector();
+
+        // table field without dot separator - should not throw ArrayIndexOutOfBoundsException
+        String noDotMsg =
+                "{\"before\":null,\"after\":{\"id\":101,\"name\":\"scooter\",\"description\":\"test\",\"weight\":1.0},"
+                        + "\"op_type\":\"I\",\"op_ts\":\"2020-05-13 15:40:06.000000\",\"table\":\"TABLENAME\"}";
+        // Should not throw - the table filter simply won't match since there's no dot
+        deserializationSchema.deserialize(noDotMsg.getBytes(), collector);
+        assertEquals(0, collector.list.size());
+    }
+
+    @Test
+    public void testFilteringTableWithDot() throws Exception {
+        OggJsonDeserializationSchema deserializationSchema =
+                new OggJsonDeserializationSchema.Builder(catalogTables)
+                        .setDatabase("OGGATE")
+                        .setTable("TBL1")
+                        .setIgnoreParseErrors(false)
+                        .build();
+        SimpleCollector collector = new SimpleCollector();
+
+        // table field with dot separator - normal case
+        String withDotMsg =
+                "{\"before\":null,\"after\":{\"id\":101,\"name\":\"scooter\",\"description\":\"test\",\"weight\":1.0},"
+                        + "\"op_type\":\"I\",\"op_ts\":\"2020-05-13 15:40:06.000000\",\"table\":\"OGGATE.TBL1\"}";
+        deserializationSchema.deserialize(withDotMsg.getBytes(), collector);
+        assertEquals(1, collector.list.size());
+    }
+
     // --------------------------------------------------------------------------------------------
     // Utilities
     // --------------------------------------------------------------------------------------------

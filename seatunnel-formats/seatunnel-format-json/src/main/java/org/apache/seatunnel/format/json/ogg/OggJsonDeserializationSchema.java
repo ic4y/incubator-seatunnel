@@ -142,16 +142,15 @@ public class OggJsonDeserializationSchema implements DeserializationSchema<SeaTu
         }
 
         try {
+            String databaseTable = jsonNode.get(FIELD_DATABASE_TABLE).asText();
+            String[] parts = databaseTable.split("\\.", 2);
             if (database != null
-                    && !databasePattern
-                            .matcher(jsonNode.get(FIELD_DATABASE_TABLE).asText().split("\\.")[0])
-                            .matches()) {
+                    && !databasePattern.matcher(parts[0]).matches()) {
                 return;
             }
             if (table != null
-                    && !tablePattern
-                            .matcher(jsonNode.get(FIELD_DATABASE_TABLE).asText().split("\\.")[1])
-                            .matches()) {
+                    && parts.length > 1
+                    && !tablePattern.matcher(parts[1]).matches()) {
                 return;
             }
 
