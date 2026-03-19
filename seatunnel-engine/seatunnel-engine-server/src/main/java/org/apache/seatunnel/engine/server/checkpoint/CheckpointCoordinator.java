@@ -154,7 +154,7 @@ public class CheckpointCoordinator {
 
     // save pending checkpoint for savepoint, to make sure the different savepoint request can be
     // processed with one savepoint operation in the same time.
-    private PendingCheckpoint savepointPendingCheckpoint;
+    private volatile PendingCheckpoint savepointPendingCheckpoint;
 
     private final String checkpointStateImapKey;
 
@@ -604,12 +604,12 @@ public class CheckpointCoordinator {
             return completableFutureWithError(
                     CheckpointCloseReason.TASK_NOT_ALL_READY_WHEN_SAVEPOINT);
         }
-        if (savepointPendingCheckpoint != null
-                && !savepointPendingCheckpoint.getCompletableFuture().isDone()) {
-            return savepointPendingCheckpoint.getCompletableFuture();
-        }
         CompletableFuture<PendingCheckpoint> savepoint;
         synchronized (lock) {
+            if (savepointPendingCheckpoint != null
+                    && !savepointPendingCheckpoint.getCompletableFuture().isDone()) {
+                return savepointPendingCheckpoint.getCompletableFuture();
+            }
             while (pendingCounter.get() > 0 && !shutdown) {
                 Thread.sleep(500);
             }
@@ -619,8 +619,8 @@ public class CheckpointCoordinator {
             }
             savepoint = createPendingCheckpoint(Instant.now().toEpochMilli(), SAVEPOINT_TYPE);
             startTriggerPendingCheckpoint(savepoint);
+            savepointPendingCheckpoint = savepoint.join();
         }
-        savepointPendingCheckpoint = savepoint.join();
         LOG.info(
                 String.format(
                         "The save point checkpointId is %s",
