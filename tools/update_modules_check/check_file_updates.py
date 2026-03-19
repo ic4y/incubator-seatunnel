@@ -35,7 +35,7 @@ def get_changed_files_between_branches(repo_path1, branch1, branch2, directorys)
                 if file_diff.b_path is not None and glob.fnmatch.fnmatch(file_diff.b_path, directory):
                     changed_files.append(file_diff.b_path)
 
-                if file_diff.a_path is not None and glob.fnmatch.fnmatch(file_diff.a_path, directory):
+                if file_diff.a_path is not None and file_diff.b_path is not None and glob.fnmatch.fnmatch(file_diff.a_path, directory):
                     changed_files.append(file_diff.a_path)
             else:
                 if glob.fnmatch.fnmatch(file_diff.b_path, directory):
