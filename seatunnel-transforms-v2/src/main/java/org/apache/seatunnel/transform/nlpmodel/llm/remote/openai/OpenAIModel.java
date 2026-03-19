@@ -82,7 +82,19 @@ public class OpenAIModel extends AbstractModel {
         }
 
         JsonNode result = OBJECT_MAPPER.readTree(responseStr);
-        String resultData = result.get("choices").get(0).get("message").get("content").asText();
+        JsonNode choices = result.get("choices");
+        if (choices == null || !choices.isArray() || choices.isEmpty()) {
+            throw new IOException(
+                    "Unexpected model response: missing 'choices' field. Response: "
+                            + responseStr);
+        }
+        JsonNode content = choices.get(0).path("message").path("content");
+        if (content.isMissingNode()) {
+            throw new IOException(
+                    "Unexpected model response: missing 'message.content' field. Response: "
+                            + responseStr);
+        }
+        String resultData = content.asText();
         return OBJECT_MAPPER.readValue(
                 convertData(resultData), new TypeReference<List<String>>() {});
     }
