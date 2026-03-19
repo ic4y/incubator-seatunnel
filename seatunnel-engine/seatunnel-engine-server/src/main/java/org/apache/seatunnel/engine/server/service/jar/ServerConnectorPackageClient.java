@@ -79,17 +79,21 @@ public class ServerConnectorPackageClient {
     public void storageConnectorJarFile(
             byte[] connectorJarByteData, ConnectorJarIdentifier connectorJarIdentifier) {
         readWriteLock.writeLock().lock();
-        storageConnectorJarFile(
-                connectorJarByteData, new File(connectorJarIdentifier.getStoragePath()));
-        readWriteLock.writeLock().unlock();
+        try {
+            storageConnectorJarFile(
+                    connectorJarByteData, new File(connectorJarIdentifier.getStoragePath()));
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 
     private void storageConnectorJarFile(byte[] connectorJarByteData, File storageFile) {
         boolean success = false;
         try {
             if (!storageFile.exists()) {
-                FileOutputStream fos = new FileOutputStream(storageFile);
-                fos.write(connectorJarByteData);
+                try (FileOutputStream fos = new FileOutputStream(storageFile)) {
+                    fos.write(connectorJarByteData);
+                }
             } else {
                 LOGGER.warning(
                         String.format(
